@@ -1,0 +1,3 @@
+[submodule "tools/toolchains"]
+	path = tools/toolchains
+	url = git@github.com:kamejoko80/toolchain_gcc_t-head_windows.git
