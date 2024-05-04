@@ -14,7 +14,8 @@ This sample description ble peripheral function with READ, WRITE/WRITE NO RESPON
 - BL616/BL618
 
 ```
-make CHIP=bl616 BOARD=bl616dk
+make ninja CHIP=bl616 BOARD=bl616dk
+make flash CHIP=bl616 COMX=COM5
 ```
 
 - BL808
