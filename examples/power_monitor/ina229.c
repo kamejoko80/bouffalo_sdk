@@ -1,5 +1,6 @@
 #include "bflb_gpio.h"
 #include "bflb_spi.h"
+#include "bflb_mtimer.h"
 #include "board.h"
 #include "ina229.h"
 #include <stdio.h>
@@ -13,11 +14,9 @@ static struct bflb_device_s *gpio;
 
 static void gpio0_isr(uint8_t pin)
 {
-    static uint32_t i = 0;
     uint8_t diag_alrt[3];
     if (pin == GPIO_PIN_0) {
         ina229_reg_read(DIAG_ALRT, diag_alrt, 3);
-        //printf("i:%d\r\n", i++);
     }
 }
 
@@ -41,7 +40,7 @@ static void spi_gpio_init(void)
     /* configure alert as external interrupt gpio */
     bflb_irq_disable(gpio->irq_num);
     bflb_gpio_init(gpio, GPIO_PIN_0, GPIO_INPUT | GPIO_PULLUP | GPIO_SMT_EN);
-    bflb_gpio_int_init(gpio, GPIO_PIN_0, GPIO_INT_TRIG_MODE_SYNC_FALLING_EDGE);
+    bflb_gpio_int_init(gpio, GPIO_PIN_0, GPIO_INT_TRIG_MODE_SYNC_RISING_EDGE);
     bflb_gpio_irq_attach(GPIO_PIN_0, gpio0_isr);
 }
 
@@ -68,7 +67,7 @@ void ina229_disable_volt_measurement(void)
 static void spi_init(void)
 {
     struct bflb_spi_config_s spi_cfg = {
-        .freq = 1 * 1000 * 1000,
+        .freq = 10 * 1000 * 1000,
         .role = SPI_ROLE_MASTER,
         .mode = SPI_MODE1,
         .data_width = SPI_DATA_WIDTH_8BIT,
@@ -136,19 +135,23 @@ void ina229_init(void)
     //ina229_reg_read(CONFIG, config, 3);
     //printf("Config Read     = %x%x\r\n", config[1], config[2]);
 
+    /* Reset the ina229 */
+    ina229_reg_write(ADC_CONFIG, (0x1 << 15));
+    bflb_mtimer_delay_ms(200);
+
     /*
      * ALATCH[15]
      * CNVR[14]: 1h = Enables conversion ready flag on ALERT pin
      * APOL[12]: 0h = Normal (Active-low, open-drain)
      */
-    ina229_reg_write(DIAG_ALRT, (0x1 << 15) | (0x1 << 14));
+    ina229_reg_write(DIAG_ALRT, (0x1 << 14) | (0x0 << 12));
 
     /* enable alert interrupt */
     ina229_enable_alert_interrupt();
 
     /*
      * MODE[15:12]:  9h => Continuous bus voltage only
-     * VBUSCT[11:9]: 6h => 2074 µs
+     * VBUSCT[11:9]: 7h =>  4120 µs (doesn't works at 50, 84, 150µs)
      */
-    ina229_reg_write(ADC_CONFIG, (0x9 << 12)|(0x1 << 9));
+    ina229_reg_write(ADC_CONFIG, (0x9 << 12)|(0x3 << 9));
 }
