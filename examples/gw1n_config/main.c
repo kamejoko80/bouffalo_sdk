@@ -39,10 +39,10 @@ void spi_gpio_init(void)
     bflb_gpio_init(gpio, GPIO_PIN_15, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_SMT_EN | GPIO_DRV_1);
 }
 
-void spi_init(void)
+void spi_init(uint8_t baudmhz)
 {
     struct bflb_spi_config_s spi_cfg = {
-        .freq = 10 * 1000 * 1000,
+        .freq = baudmhz * 1000 * 1000,
         .role = SPI_ROLE_MASTER,
         .mode = SPI_MODE0,
         .data_width = SPI_DATA_WIDTH_8BIT,
@@ -128,6 +128,18 @@ void gowin_download_bitstream(uint8_t *data, uint32_t len)
     set_cs_pin();
 }
 
+void read_ipc_core_hw_version(void)
+{
+    uint8_t cmd[4] = {0x06, 0x06, 0x06, 0x06};
+    uint8_t data[4] = {0x00, 0x00, 0x00, 0x00};
+
+    clr_cs_pin();
+    bflb_spi_poll_exchange(spi0, cmd, data, 4);
+    set_cs_pin();
+
+    printf("IPC Core HW version ymd: %2d %2d %2d\r\n", data[1], data[2], data[3]);
+}
+
 int main(void)
 {
     uint32_t data;
@@ -135,7 +147,7 @@ int main(void)
     board_init();
     gpio_led_init();
     spi_gpio_init();
-    spi_init();
+    spi_init(2);
 
     printf("Gowin FPGA programming\r\n");
 
@@ -173,7 +185,12 @@ int main(void)
     } else {
         printf("Bit stream download successfully\r\n");
     }
-#endif    
+#endif
+
+    /* Wait sometimes */
+    bflb_mtimer_delay_ms(200);
+    /* Read IPC core hw version */
+    read_ipc_core_hw_version();
 
     cdc_acm_init();
 
