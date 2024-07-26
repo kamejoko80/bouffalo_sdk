@@ -39,6 +39,20 @@ void spi_gpio_init(void)
     bflb_gpio_init(gpio, GPIO_PIN_15, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_SMT_EN | GPIO_DRV_1);
 }
 
+void spi_gpio_init_full(void)
+{
+    gpio = bflb_device_get_by_name("gpio");
+
+    /* spi csn */
+    bflb_gpio_init(gpio, GPIO_PIN_12, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_SMT_EN | GPIO_DRV_1);
+    /* spi clk */
+    bflb_gpio_init(gpio, GPIO_PIN_13, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_SMT_EN | GPIO_DRV_1);
+    /* spi miso */
+    bflb_gpio_init(gpio, GPIO_PIN_14, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_SMT_EN | GPIO_DRV_1);
+    /* spi mosi */
+    bflb_gpio_init(gpio, GPIO_PIN_15, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_SMT_EN | GPIO_DRV_1);
+}
+
 void spi_init(uint8_t baudmhz)
 {
     struct bflb_spi_config_s spi_cfg = {
@@ -55,6 +69,25 @@ void spi_init(uint8_t baudmhz)
     spi0 = bflb_device_get_by_name("spi0");
     bflb_spi_init(spi0, &spi_cfg);
     bflb_spi_feature_control(spi0, SPI_CMD_SET_CS_INTERVAL, 0);
+    bflb_spi_feature_control(spi0, SPI_CMD_SET_DATA_WIDTH, SPI_DATA_WIDTH_8BIT);
+}
+
+void spi_init_full(uint8_t baudmhz)
+{
+    struct bflb_spi_config_s spi_cfg = {
+        .freq = baudmhz * 1000 * 1000,
+        .role = SPI_ROLE_MASTER,
+        .mode = SPI_MODE0,
+        .data_width = SPI_DATA_WIDTH_8BIT,
+        .bit_order = SPI_BIT_MSB,
+        .byte_order = SPI_BYTE_LSB,
+        .tx_fifo_threshold = 0,
+        .rx_fifo_threshold = 0,
+    };
+
+    spi0 = bflb_device_get_by_name("spi0");
+    bflb_spi_init(spi0, &spi_cfg);
+    bflb_spi_feature_control(spi0, SPI_CMD_SET_CS_INTERVAL, 1);
     bflb_spi_feature_control(spi0, SPI_CMD_SET_DATA_WIDTH, SPI_DATA_WIDTH_8BIT);
 }
 
@@ -131,9 +164,7 @@ void gowin_download_bitstream(uint8_t *data, uint32_t len)
 void ipc_core_nope_cmd(void)
 {
     uint8_t cmd[4] = {0};
-    clr_cs_pin();
     bflb_spi_poll_exchange(spi0, &cmd, NULL, 4);
-    set_cs_pin();
 }
 
 void ipc_core_read_gw_version(void)
@@ -141,9 +172,7 @@ void ipc_core_read_gw_version(void)
     uint8_t cmd[4] = {0x06, 0x00, 0x00, 0x00};
     uint8_t data[4] = {0x00, 0x00, 0x00, 0x00};
 
-    clr_cs_pin();
     bflb_spi_poll_exchange(spi0, cmd, data, 4);
-    set_cs_pin();
 
     printf("IPC Core GW version ymd: %2d %2d %2d\r\n", data[1], data[2], data[3]);
 }
@@ -153,9 +182,7 @@ void ipc_core_read_chip_id(void)
     uint8_t cmd[4] = {0x07, 0x00, 0x00, 0x00};
     uint8_t data[4] = {0x00, 0x00, 0x00, 0x00};
 
-    clr_cs_pin();
     bflb_spi_poll_exchange(spi0, cmd, data, 4);
-    set_cs_pin();
 
     printf("IPC Core chip ID: %X %X %X\r\n", data[1], data[2], data[3]);
 }
@@ -167,7 +194,7 @@ int main(void)
     board_init();
     gpio_led_init();
     spi_gpio_init();
-    spi_init(10);
+    spi_init(20);
 
     printf("Gowin FPGA programming\r\n");
 
@@ -206,6 +233,10 @@ int main(void)
         printf("Bit stream download successfully\r\n");
     }
 #endif
+
+    /* Re-init SPI for the auto csn */
+    spi_gpio_init_full();
+    spi_init_full(10);
 
     /* Importance, send ipc nope cmd before accessing the SSPI */
     ipc_core_nope_cmd();
