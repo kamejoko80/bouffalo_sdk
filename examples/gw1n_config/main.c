@@ -1,3 +1,4 @@
+#include "bl616_glb.h"
 #include "bflb_gpio.h"
 #include "bflb_spi.h"
 #include "usbd_core.h"
@@ -5,7 +6,9 @@
 #include "board.h"
 #include "gw1n_image.h"
 
-#define GPIO_LED GPIO_PIN_27
+/* This program is running on the Sipeed M0S dock only */
+#define GPIO_LED   GPIO_PIN_27
+#define BOOT_PIN   GPIO_PIN_2
 
 #define clr_cs_pin() bflb_gpio_reset(gpio, GPIO_PIN_12)
 #define set_cs_pin() bflb_gpio_set(gpio, GPIO_PIN_12)
@@ -21,6 +24,8 @@ void gpio_led_init(void)
     gpio = bflb_device_get_by_name("gpio");
     bflb_gpio_init(gpio, GPIO_LED, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_0);
     bflb_gpio_set(gpio, GPIO_LED);
+
+    bflb_gpio_init(gpio, BOOT_PIN, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0);
 }
 
 void spi_gpio_init(void)
@@ -187,27 +192,19 @@ void ipc_core_read_chip_id(void)
     printf("IPC Core chip ID: %X %X %X\r\n", data[1], data[2], data[3]);
 }
 
-int main(void)
+void gowin_fpga_config(void)
 {
     uint32_t data;
 
-    board_init();
-    gpio_led_init();
-    spi_gpio_init();
-    spi_init(20);
-
     printf("Gowin FPGA programming\r\n");
 
-    /* Wait for fpga power is stable */
-    bflb_mtimer_delay_ms(200);
     data = gowin_read(0x11000000);
 
     if(data != 0x900281B) {
-    	printf("Error! Invalid device ID %X\r\n", data);
-    	printf("Exit program\r\n");
-    	return -1;
+        printf("Error! Invalid device ID %X\r\n", data);
+        return;
     } else {
-    	printf("Found device ID %X\r\n", data);
+        printf("Found device ID %X\r\n", data);
     }
 
     /* Write enable */
@@ -233,6 +230,18 @@ int main(void)
         printf("Bit stream download successfully\r\n");
     }
 #endif
+}
+
+int main(void)
+{
+    board_init();
+    gpio_led_init();
+    spi_gpio_init();
+    spi_init(20);
+
+    /* Wait for fpga power is stable */
+    bflb_mtimer_delay_ms(200);
+    gowin_fpga_config();
 
     /* Re-init SPI for the auto csn */
     spi_gpio_init_full();
@@ -245,13 +254,25 @@ int main(void)
     ipc_core_read_gw_version();
     ipc_core_read_chip_id();
 
-    cdc_acm_init();
-
     while (1) {
-        cdc_acm_data_send_with_dtr_test();
-        bflb_mtimer_delay_ms(1000);
-        bflb_gpio_set(gpio, GPIO_LED);
-        bflb_mtimer_delay_ms(1000);
-        bflb_gpio_reset(gpio, GPIO_LED);
+        /* Check if user press boot pin */
+        if(bflb_gpio_read(gpio, BOOT_PIN))
+        {
+            /* wait for button release */
+            while(bflb_gpio_read(gpio, BOOT_PIN));
+            printf("System will reset after 3s\r\n");
+
+            for(int i = 0; i < 3; i++)
+            {
+                bflb_mtimer_delay_ms(500);
+                bflb_gpio_reset(gpio, GPIO_LED);
+                bflb_mtimer_delay_ms(500);
+                bflb_gpio_set(gpio, GPIO_LED);
+            }
+
+            bflb_gpio_reset(gpio, GPIO_LED);
+            printf("System reset!\r\n");
+            GLB_SW_System_Reset();
+        }
     }
 }
