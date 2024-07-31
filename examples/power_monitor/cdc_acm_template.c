@@ -1,3 +1,8 @@
+#include <stdarg.h>  // For handling variable arguments
+#include <stdio.h>   // For vsnprintf
+#include <stdint.h>  // For uint8_t and uint16_t types
+#include <string.h>  // For strlen
+
 #include "usbd_core.h"
 #include "usbd_cdc.h"
 
@@ -208,4 +213,22 @@ void cdc_acm_data_send_with_dtr_test(void)
         while (ep_tx_busy_flag) {
         }
     }
+}
+
+void cdc_acm_prints(char *str)
+{
+    uint16_t len = strlen(str);
+    usbd_ep_start_write(CDC_IN_EP, (uint8_t*)str, len);
+}
+
+/* Must define global buffer */
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX char buffer[256];
+
+void cdc_acm_printf(const char *format, ...)
+{
+    va_list args;
+    va_start (args, format);
+    vsnprintf (buffer, 255, format, args);
+    cdc_acm_prints(buffer);
+    va_end (args);
 }
