@@ -18,7 +18,8 @@ static struct bflb_device_s *gpio;
 
 extern void cdc_acm_init(void);
 extern void cdc_acm_printf(const char *format, ...);
-extern void tca9534_test(void);
+extern void spi_fifo_interface_bus_init(void);
+extern void spi_fifo_test(uint8_t cmd);
 
 void gpio_init(void)
 {
@@ -43,8 +44,6 @@ int main(void)
     gpio_init();
     tca9534_init();
 
-    //ina229_init();
-
     /* initialize usb cdc acm */
     cdc_acm_init();
 
@@ -63,9 +62,20 @@ int main(void)
     bflb_mtimer_delay_ms(200);
     gowin_fpga_config();
 
-    cdc_acm_printf("Init INA229...\r\n");
     bflb_mtimer_delay_ms(200);
-    ina229_init();
+    cdc_acm_printf("Start SPI FIFO test\r\n");
+    spi_fifo_interface_bus_init();
+
+    /* press button to break */
+    uint8_t i = 0;
+    while(!bflb_gpio_read(gpio, BOOT_PIN))
+    {
+        spi_fifo_test(i++);
+        bflb_mtimer_delay_ms(300);
+    }
+
+    /* turn off the led */
+    bflb_gpio_set(gpio, GPIO_LED);
 
     while (1) {
         /* Check if user press boot pin */
