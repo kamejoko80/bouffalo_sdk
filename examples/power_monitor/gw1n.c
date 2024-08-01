@@ -13,6 +13,40 @@ extern void cdc_acm_printf(const char *format, ...);
 #define clr_cs_pin() bflb_gpio_reset(gpio, GPIO_PIN_28)
 #define set_cs_pin() bflb_gpio_set(gpio, GPIO_PIN_28)
 
+void gowin_spi0_gpio_init(void)
+{
+    gpio = bflb_device_get_by_name("gpio");
+    
+    /* spi cs as gpio */
+    bflb_gpio_init(gpio, GPIO_PIN_28, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_1);
+    bflb_gpio_set(gpio, GPIO_PIN_28);
+    /* spi clk */
+    bflb_gpio_init(gpio, GPIO_PIN_29, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_SMT_EN | GPIO_DRV_1);
+    /* spi miso */
+    bflb_gpio_init(gpio, GPIO_PIN_30, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_SMT_EN | GPIO_DRV_1);
+    /* spi mosi */
+    bflb_gpio_init(gpio, GPIO_PIN_27, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_SMT_EN | GPIO_DRV_1);    
+}
+
+void gowin_spi0_init(uint8_t baudmhz)
+{
+    struct bflb_spi_config_s spi_cfg = {
+        .freq = baudmhz * 1000 * 1000,
+        .role = SPI_ROLE_MASTER,
+        .mode = SPI_MODE0,
+        .data_width = SPI_DATA_WIDTH_8BIT,
+        .bit_order = SPI_BIT_MSB,
+        .byte_order = SPI_BYTE_LSB,
+        .tx_fifo_threshold = 0,
+        .rx_fifo_threshold = 0,
+    };
+
+    spi0 = bflb_device_get_by_name("spi0");
+    bflb_spi_init(spi0, &spi_cfg);
+    bflb_spi_feature_control(spi0, SPI_CMD_SET_CS_INTERVAL, 0);
+    bflb_spi_feature_control(spi0, SPI_CMD_SET_DATA_WIDTH, SPI_DATA_WIDTH_8BIT);
+}
+
 void gowin_power_on(void)
 {
     tca9534_pin_control(FPGA_MODE0, 1);
@@ -102,6 +136,10 @@ void gowin_fpga_config(void)
     uint32_t data;
 
     cdc_acm_printf("Gowin FPGA programming\r\n");
+
+    /* Init dedicated spi for the FPGA config */
+    gowin_spi0_gpio_init();
+    gowin_spi0_init(20);
 
     data = gowin_read(0x11000000);
 
