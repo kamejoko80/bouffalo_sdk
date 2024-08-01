@@ -51,13 +51,11 @@ void tca9534_write_reg(uint8_t addr, uint8_t value)
 
 void tca9534_init(void)
 {
-    uint8_t value;
-
     /* before port output configuration,
        set the default output value first
-       P7(NA)                = 0
-       P6(NA)                = 0
-       P5(25MHZ_ENA)         = 0
+       P7(NA)                = 0 // Not use -> set input
+       P6(NA)                = 0 // Not use -> set input
+       P5(25MHZ_ENA)         = 0 // Not use -> set input
        P4(BAT_SIM_ENA)       = 0
        P3(VOL_MEASURE_ENA_N) = 1
        P2(FPGA_VCORE_ENA)    = 0
@@ -66,9 +64,10 @@ void tca9534_init(void)
     */
 
     tca9534_write_reg(O_PORT, 0x0A);
-    tca9534_write_reg(C_PORT, 0xC0);
+    tca9534_write_reg(C_PORT, 0xE0);
 
-/*  value = tca9534_read_reg(0);
+/*  uint8_t value;
+    value = tca9534_read_reg(0);
     cdc_acm_printf("Reg 0 = %X\r\n", value);
     value = tca9534_read_reg(1);
     cdc_acm_printf("Reg 1 = %X\r\n", value);
