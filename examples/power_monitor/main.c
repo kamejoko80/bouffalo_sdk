@@ -70,7 +70,7 @@ int main(void)
     uint8_t i = 0;
     while(!bflb_gpio_read(gpio, BOOT_PIN))
     {
-        spi_fifo_test(i++);
+        spi_fifo_test(0x35);
         bflb_mtimer_delay_ms(300);
     }
 
