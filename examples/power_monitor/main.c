@@ -6,6 +6,7 @@
 #include "bflb_mtimer.h"
 #include "board.h"
 #include "ina229.h"
+#include "tca9534.h"
 
 #include <stdarg.h>  // For va_list
 
@@ -63,7 +64,7 @@ int main(void)
     bflb_gpio_reset(gpio, GPIO_LED);
 
     /* test gpio expander */
-    tca9534_test();
+    tca9534_init();
 
     while (1) {
         /* Check if user press boot pin */

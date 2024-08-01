@@ -10,7 +10,7 @@
 extern struct bflb_device_s *i2c0;
 extern void cdc_acm_printf(const char *format, ...);
 
-#define DEVICE_ADDR 0x20 // A0 = A1 = A2 = 0
+#define DEVICE_ADDR 0x38 // A0 = A1 = A2 = 0
 
 uint8_t tca9534_read_reg(uint8_t addr)
 {
@@ -33,9 +33,40 @@ uint8_t tca9534_read_reg(uint8_t addr)
     return reg_value;
 }
 
-void tca9534_test(void)
+void tca9534_write_reg(uint8_t addr, uint8_t value)
+{
+    struct bflb_i2c_msg_s msgs[1];
+    uint8_t addr_value[2];
+
+    addr_value[0] = addr;
+    addr_value[1] = value;
+
+    msgs[0].addr = DEVICE_ADDR;
+    msgs[0].flags = I2C_M_WRITE;
+    msgs[0].buffer = addr_value;
+    msgs[0].length = 2;
+
+    bflb_i2c_transfer(i2c0, msgs, 1);
+}
+
+void tca9534_init(void)
 {
     uint8_t value;
+
+    /* before port output configuration,
+       set the default output value first
+       P7(NA)                = 0
+       P6(NA)                = 0
+       P5(25MHZ_ENA)         = 0
+       P4(BAT_SIM_ENA)       = 0
+       P3(VOL_MEASURE_ENA_N) = 1
+       P2(FPGA_VCORE_ENA)    = 0
+       P1(FPGA_VDDIO_ENA_N)  = 1
+       P0(FPGA_MODE0)        = 0
+    */
+
+    tca9534_write_reg(O_PORT, 0x0A);
+    tca9534_write_reg(C_PORT, 0xC0);
 
     value = tca9534_read_reg(0);
     cdc_acm_printf("Reg 0 = %X\r\n", value);
@@ -43,4 +74,11 @@ void tca9534_test(void)
     cdc_acm_printf("Reg 1 = %X\r\n", value);
     value = tca9534_read_reg(2);
     cdc_acm_printf("Reg 2 = %X\r\n", value);
+    value = tca9534_read_reg(3);
+    cdc_acm_printf("Reg 3 = %X\r\n", value);
+}
+
+void tca9534_pin_control(power_ctrl_t ctrl, uint8_t set)
+{
+
 }
