@@ -44,13 +44,13 @@ static void spi_init(uint8_t baudmhz)
 void spi_fifo_interface_bus_init(void)
 {
     spi_gpio_init();
-    spi_init(4);
+    spi_init(12);
 }
 
 void spi_fifo_test(uint8_t cmd)
 {
     uint8_t p_tx[2];
-    
+
     p_tx[0] = cmd;
     p_tx[1] = 0;
     bflb_spi_poll_exchange(spi0, p_tx, NULL, 2);
