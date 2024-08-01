@@ -68,17 +68,44 @@ void tca9534_init(void)
     tca9534_write_reg(O_PORT, 0x0A);
     tca9534_write_reg(C_PORT, 0xC0);
 
-    value = tca9534_read_reg(0);
+/*  value = tca9534_read_reg(0);
     cdc_acm_printf("Reg 0 = %X\r\n", value);
     value = tca9534_read_reg(1);
     cdc_acm_printf("Reg 1 = %X\r\n", value);
     value = tca9534_read_reg(2);
     cdc_acm_printf("Reg 2 = %X\r\n", value);
     value = tca9534_read_reg(3);
-    cdc_acm_printf("Reg 3 = %X\r\n", value);
+    cdc_acm_printf("Reg 3 = %X\r\n", value); */
 }
 
 void tca9534_pin_control(power_ctrl_t ctrl, uint8_t set)
 {
+    uint8_t value;
+    value = tca9534_read_reg(O_PORT);
 
+    /* check for inverted polorization */
+    if((ctrl == FPGA_VDDIO) || (ctrl == VOL_MEASURE))
+    {
+        if(set)
+        {
+            value &= ~(1<<ctrl);
+        }
+        else
+        {
+            value |= 1<<ctrl;
+        }
+    }
+    else
+    {
+        if(set)
+        {
+            value |= 1<<ctrl;
+        }
+        else
+        {
+            value &= ~(1<<ctrl);
+        }
+    }
+
+    tca9534_write_reg(O_PORT, value);
 }
