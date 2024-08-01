@@ -26,5 +26,6 @@
 
 void ina229_init(void);
 void ina229_enable_alert_interrupt(void);
+void ina229_disable_alert_interrupt(void);
 
 #endif /* _INA229_H_ */

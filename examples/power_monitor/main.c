@@ -14,9 +14,7 @@
 #define GPIO_LED GPIO_PIN_3
 #define BOOT_PIN GPIO_PIN_2
 
-struct bflb_device_s *gpio;
-struct bflb_device_s *i2c0;
-struct bflb_device_s *spi0;
+static struct bflb_device_s *gpio;
 
 extern void cdc_acm_init(void);
 extern void cdc_acm_printf(const char *format, ...);
@@ -39,17 +37,10 @@ void gpio_init(void)
     bflb_gpio_init(gpio, GPIO_PIN_17, GPIO_FUNC_I2C0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
 }
 
-void i2c0_init(void)
-{
-    i2c0 = bflb_device_get_by_name("i2c0");
-    bflb_i2c_init(i2c0, 400000);
-}
-
 int main(void)
 {
     board_init();
     gpio_init();
-    i2c0_init();
     tca9534_init();
 
     //ina229_init();
@@ -71,6 +62,10 @@ int main(void)
     gowin_power_on();
     bflb_mtimer_delay_ms(200);
     gowin_fpga_config();
+
+    cdc_acm_printf("Init INA229...\r\n");
+    bflb_mtimer_delay_ms(200);
+    ina229_init();
 
     while (1) {
         /* Check if user press boot pin */

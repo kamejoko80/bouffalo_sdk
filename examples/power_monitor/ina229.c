@@ -2,15 +2,20 @@
 #include "bflb_spi.h"
 #include "bflb_mtimer.h"
 #include "board.h"
+#include "tca9534.h"
 #include "ina229.h"
 #include <stdio.h>
 #include <string.h>
 
 #define MAX_REG_VALUE_SIZE (40/8 + 1)
-#define VOLT_MEASURE_ENA GPIO_PIN_20
 
 static struct bflb_device_s *spi0;
 static struct bflb_device_s *gpio;
+
+extern void cdc_acm_printf(const char *format, ...);
+
+void ina229_reg_read(uint8_t addr, uint8_t *value, uint8_t len);
+void ina229_reg_write(uint8_t addr, uint16_t value);
 
 static void gpio0_isr(uint8_t pin)
 {
@@ -33,10 +38,6 @@ static void spi_gpio_init(void)
     /* spi mosi */
     bflb_gpio_init(gpio, GPIO_PIN_27, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_SMT_EN | GPIO_DRV_1);
 
-    /* configure voltage measurement enable */
-    bflb_gpio_init(gpio, VOLT_MEASURE_ENA, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_0);
-    bflb_gpio_set(gpio, VOLT_MEASURE_ENA);
-
     /* configure alert as external interrupt gpio */
     bflb_irq_disable(gpio->irq_num);
     bflb_gpio_init(gpio, GPIO_PIN_0, GPIO_INPUT | GPIO_PULLUP | GPIO_SMT_EN);
@@ -56,18 +57,18 @@ void ina229_disable_alert_interrupt(void)
 
 void ina229_enable_volt_measurement(void)
 {
-    bflb_gpio_reset(gpio, VOLT_MEASURE_ENA);
+    tca9534_pin_control(VOL_MEASURE, 1);
 }
 
 void ina229_disable_volt_measurement(void)
 {
-    bflb_gpio_set(gpio, VOLT_MEASURE_ENA);
+    tca9534_pin_control(VOL_MEASURE, 0);
 }
 
-static void spi_init(void)
+static void spi_init(uint8_t baudmhz)
 {
     struct bflb_spi_config_s spi_cfg = {
-        .freq = 10 * 1000 * 1000,
+        .freq = baudmhz * 1000 * 1000,
         .role = SPI_ROLE_MASTER,
         .mode = SPI_MODE1,
         .data_width = SPI_DATA_WIDTH_8BIT,
@@ -86,7 +87,7 @@ static void spi_init(void)
 void ina229_interface_bus_init(void)
 {
     spi_gpio_init();
-    spi_init();
+    spi_init(10);
 }
 
 void ina229_reg_read(uint8_t addr, uint8_t *value, uint8_t len)
@@ -128,12 +129,12 @@ void ina229_init(void)
     ina229_reg_read(MANUFACTURER_ID, man_id, 3);
     ina229_reg_read(DEVICE_ID, device_id, 3);
 
-    printf("Manufacturer ID = %x%x\r\n", man_id[1], man_id[2]);
-    printf("Device ID       = %x%x\r\n", device_id[1], device_id[2]);
+    cdc_acm_printf("Manufacturer ID = %x%x\r\n", man_id[1], man_id[2]);
+    cdc_acm_printf("Device ID       = %x%x\r\n", device_id[1], device_id[2]);
 
     //ina229_reg_write(CONFIG, 0x7FFF);
     //ina229_reg_read(CONFIG, config, 3);
-    //printf("Config Read     = %x%x\r\n", config[1], config[2]);
+    //cdc_acm_printf("Config Read     = %x%x\r\n", config[1], config[2]);
 
     /* Reset the ina229 */
     ina229_reg_write(ADC_CONFIG, (0x1 << 15));
@@ -151,7 +152,12 @@ void ina229_init(void)
 
     /*
      * MODE[15:12]:  9h => Continuous bus voltage only
-     * VBUSCT[11:9]: 7h =>  4120 µs (doesn't works at 50, 84, 150µs)
+     * VBUSCT[11:9]: (doesn't works at 50, 84, 150µs)
+     *               3h => 280µs
+     *               4h => 540µs
+     *               5h => 1052µs
+     *               6h => 2074µs
+     *               7h => 4120µs
      */
     ina229_reg_write(ADC_CONFIG, (0x9 << 12)|(0x3 << 9));
 }

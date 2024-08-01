@@ -7,10 +7,16 @@
 #include <string.h>
 #include <stdarg.h>
 
-extern struct bflb_device_s *i2c0;
+static struct bflb_device_s *i2c0;
 extern void cdc_acm_printf(const char *format, ...);
 
 #define DEVICE_ADDR 0x38 // A0 = A1 = A2 = 0
+
+void i2c0_init(void)
+{
+    i2c0 = bflb_device_get_by_name("i2c0");
+    bflb_i2c_init(i2c0, 400000);
+}
 
 uint8_t tca9534_read_reg(uint8_t addr)
 {
@@ -51,6 +57,8 @@ void tca9534_write_reg(uint8_t addr, uint8_t value)
 
 void tca9534_init(void)
 {
+    i2c0_init();
+
     /* before port output configuration,
        set the default output value first
        P7(NA)                = 0 // Not use -> set input

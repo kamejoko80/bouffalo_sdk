@@ -5,8 +5,8 @@
 #include "tca9534.h"
 #include "gw1n_image.h"
 
-extern struct bflb_device_s *gpio;
-extern struct bflb_device_s *spi0;
+static struct bflb_device_s *gpio;
+static struct bflb_device_s *spi0;
 
 extern void cdc_acm_printf(const char *format, ...);
 
