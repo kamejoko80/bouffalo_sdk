@@ -5,6 +5,11 @@
 #include <stdio.h>
 #include <string.h>
 
+/*
+ * For the command list refer to the following code: 
+ * https://github.com/kamejoko80/litex-soc-builder/blob/main/custom_projects/test_spi_fifo_gw1n_lv1.py
+ */
+
 static struct bflb_device_s *spi0;
 static struct bflb_device_s *gpio;
 

@@ -109,7 +109,7 @@ int main(void)
         while(bflb_gpio_read(gpio, BOOT_PIN));
         spi_ctrl_cmd_read_gw_version();
         spi_ctrl_cmd_read_chip_id();
-        spi_ctrl_cmd_reset_fifo();
+        //spi_ctrl_cmd_reset_fifo();
         spi_ctrl_cmd_write_data_len();
         spi_ctrl_cmd_read_data_len();
         spi_ctrl_cmd_write_data();
