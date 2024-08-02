@@ -8,6 +8,8 @@
 static struct bflb_device_s *spi0;
 static struct bflb_device_s *gpio;
 
+extern void cdc_acm_printf(const char *format, ...);
+
 static void spi_gpio_init(void)
 {
     gpio = bflb_device_get_by_name("gpio");
@@ -35,7 +37,7 @@ void spi_fifo_interface_bus_init(void)
     spi_init();
 }
 
-void spi_fifo_test(uint8_t cmd)
+void sspi_test(uint8_t cmd)
 {
     uint8_t p_tx[4];
 
@@ -44,4 +46,77 @@ void spi_fifo_test(uint8_t cmd)
     p_tx[2] = 0;
     p_tx[3] = 0;
     bflb_spi_poll_exchange(spi0, p_tx, NULL, 4);
+}
+
+void spi_ctrl_send_byte(uint8_t byte)
+{
+    uint8_t p_tx[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
+    p_tx[0] = byte;
+
+    bflb_spi_poll_exchange(spi0, p_tx, NULL, 4);
+}
+
+void spi_ctrl_cmd_read_gw_version(void)
+{
+    uint8_t p_tx[5] = {0x06, 0x00, 0x00, 0x00, 0x00};
+    uint8_t p_rx[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
+
+    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 5);
+
+    cdc_acm_printf("GW version YYMMDD = %d %d %d\r\n", p_rx[2], p_rx[3], p_rx[4]);
+}
+
+void spi_ctrl_cmd_read_chip_id(void)
+{
+    uint8_t p_tx[5] = {0x07, 0x00, 0x00, 0x00, 0x00};
+    uint8_t p_rx[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
+
+    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 5);
+
+    cdc_acm_printf("Chip ID           = %X %X %X\r\n", p_rx[2], p_rx[3], p_rx[4]);
+}
+
+void spi_ctrl_cmd_reset_fifo(void)
+{
+    uint8_t p_tx[3] = {0x01, 0x00, 0x00};
+    uint8_t p_rx[3] = {0x00, 0x00, 0x00};
+
+    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 3);
+
+    cdc_acm_printf("Reset fifo ack    = %X\r\n", p_rx[2]);
+}
+
+void spi_ctrl_cmd_write_data_len(void)
+{
+    uint8_t p_tx[4] = {0x02, 0xAA, 0x55, 0x00};
+    uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
+
+    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
+
+    cdc_acm_printf("Write dt len ack  = %X\r\n", p_rx[3]);
+}
+
+void spi_ctrl_cmd_read_data_len(void)
+{
+    uint8_t p_tx[4] = {0x03, 0x00, 0x00, 0x00};
+    uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
+
+    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
+
+    cdc_acm_printf("Read data len     = %X %X\r\n", p_rx[2], p_rx[3]);
+}
+
+void spi_ctrl_cmd_write_data(void)
+{
+    uint8_t p_tx[8] = {0x04, 0x00, 0x00, 0x00, 0x11, 0x22, 0x33, 0x44};
+    bflb_spi_poll_exchange(spi0, p_tx, NULL, 8);
+}
+
+void spi_ctrl_cmd_read_data(void)
+{
+    uint8_t p_tx[8] = {0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    uint8_t p_rx[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 8);
+    cdc_acm_printf("Read data len     = %X %X\r\n", p_rx[2], p_rx[3]);
+    cdc_acm_printf("Read data         = %X %X %X %X\r\n", p_rx[4], p_rx[5], p_rx[6], p_rx[7]);
 }

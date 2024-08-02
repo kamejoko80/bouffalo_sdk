@@ -19,7 +19,15 @@ static struct bflb_device_s *gpio;
 extern void cdc_acm_init(void);
 extern void cdc_acm_printf(const char *format, ...);
 extern void spi_fifo_interface_bus_init(void);
-extern void spi_fifo_test(uint8_t cmd);
+extern void sspi_test(uint8_t cmd);
+extern void spi_ctrl_cmd_read_gw_version(void);
+extern void spi_ctrl_cmd_read_chip_id(void);
+extern void spi_ctrl_send_byte(uint8_t byte);
+void spi_ctrl_cmd_reset_fifo(void);
+void spi_ctrl_cmd_write_data_len(void);
+void spi_ctrl_cmd_read_data_len(void);
+void spi_ctrl_cmd_write_data(void);
+void spi_ctrl_cmd_read_data(void);
 
 void gpio_init(void)
 {
@@ -66,13 +74,46 @@ int main(void)
     cdc_acm_printf("Start SPI FIFO test\r\n");
     spi_fifo_interface_bus_init();
 
+#if 0
     /* press button to break */
     uint8_t i = 0;
     while(!bflb_gpio_read(gpio, BOOT_PIN))
     {
-        spi_fifo_test(i++);
+        sspi_test(i++);
         bflb_mtimer_delay_ms(50);
     }
+#endif
+
+#if 0
+    while(1)
+    {
+        while(!bflb_gpio_read(gpio, BOOT_PIN));
+        while(bflb_gpio_read(gpio, BOOT_PIN));
+        cdc_acm_printf("Sending cmd 0x06\r\n");
+        spi_ctrl_send_byte(0x06);
+
+        while(!bflb_gpio_read(gpio, BOOT_PIN));
+        while(bflb_gpio_read(gpio, BOOT_PIN));
+        cdc_acm_printf("Sending cmd 0x01\r\n");
+        spi_ctrl_send_byte(0x01);
+    }
+#endif
+
+#if 1
+    while(1)
+    {
+        cdc_acm_printf("Press button to read GW version\r\n");
+        while(!bflb_gpio_read(gpio, BOOT_PIN));
+        while(bflb_gpio_read(gpio, BOOT_PIN));
+        spi_ctrl_cmd_read_gw_version();
+        spi_ctrl_cmd_read_chip_id();
+        spi_ctrl_cmd_reset_fifo();
+        spi_ctrl_cmd_write_data_len();
+        spi_ctrl_cmd_read_data_len();
+        spi_ctrl_cmd_write_data();
+        spi_ctrl_cmd_read_data();
+    }
+#endif    
 
     /* turn off the led */
     bflb_gpio_set(gpio, GPIO_LED);
