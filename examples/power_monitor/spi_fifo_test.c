@@ -52,7 +52,6 @@ void spi_ctrl_send_byte(uint8_t byte)
 {
     uint8_t p_tx[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
     p_tx[0] = byte;
-
     bflb_spi_poll_exchange(spi0, p_tx, NULL, 4);
 }
 
@@ -60,9 +59,7 @@ void spi_ctrl_cmd_read_gw_version(void)
 {
     uint8_t p_tx[5] = {0x06, 0x00, 0x00, 0x00, 0x00};
     uint8_t p_rx[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
-
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 5);
-
     cdc_acm_printf("GW version YYMMDD = %d %d %d\r\n", p_rx[2], p_rx[3], p_rx[4]);
 }
 
@@ -80,9 +77,7 @@ void spi_ctrl_cmd_reset_fifo(void)
 {
     uint8_t p_tx[3] = {0x01, 0x00, 0x00};
     uint8_t p_rx[3] = {0x00, 0x00, 0x00};
-
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 3);
-
     cdc_acm_printf("Reset fifo ack    = %X\r\n", p_rx[2]);
 }
 
@@ -90,9 +85,7 @@ void spi_ctrl_cmd_write_data_len(void)
 {
     uint8_t p_tx[4] = {0x02, 0xAA, 0x55, 0x00};
     uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
-
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
-
     cdc_acm_printf("Write dt len ack  = %X\r\n", p_rx[3]);
 }
 
@@ -100,9 +93,7 @@ void spi_ctrl_cmd_read_data_len(void)
 {
     uint8_t p_tx[4] = {0x03, 0x00, 0x00, 0x00};
     uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
-
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
-
     cdc_acm_printf("Read data len     = %X %X\r\n", p_rx[2], p_rx[3]);
 }
 
@@ -119,4 +110,20 @@ void spi_ctrl_cmd_read_data(void)
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 8);
     cdc_acm_printf("Read data len     = %X %X\r\n", p_rx[2], p_rx[3]);
     cdc_acm_printf("Read data         = %X %X %X %X\r\n", p_rx[4], p_rx[5], p_rx[6], p_rx[7]);
+}
+
+void spi_ctrl_cmd_read_tx_fifo_level(void)
+{
+    uint8_t p_tx[4] = {0x08, 0x00, 0x00, 0x00};
+    uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
+    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
+    cdc_acm_printf("Tx fifo level     = %d\r\n", (uint16_t)((p_rx[2] << 16) | p_rx[3]));    
+}
+
+void spi_ctrl_cmd_read_rx_fifo_level(void)
+{
+    uint8_t p_tx[4] = {0x09, 0x00, 0x00, 0x00};
+    uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
+    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
+    cdc_acm_printf("Rx fifo level     = %d\r\n", (uint16_t)((p_rx[2] << 16) | p_rx[3]));    
 }

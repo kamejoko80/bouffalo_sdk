@@ -28,6 +28,8 @@ void spi_ctrl_cmd_write_data_len(void);
 void spi_ctrl_cmd_read_data_len(void);
 void spi_ctrl_cmd_write_data(void);
 void spi_ctrl_cmd_read_data(void);
+void spi_ctrl_cmd_read_tx_fifo_level(void);
+void spi_ctrl_cmd_read_rx_fifo_level(void);
 
 void gpio_init(void)
 {
@@ -111,9 +113,11 @@ int main(void)
         spi_ctrl_cmd_write_data_len();
         spi_ctrl_cmd_read_data_len();
         spi_ctrl_cmd_write_data();
+        spi_ctrl_cmd_read_tx_fifo_level();
+        spi_ctrl_cmd_read_rx_fifo_level();
         spi_ctrl_cmd_read_data();
     }
-#endif    
+#endif
 
     /* turn off the led */
     bflb_gpio_set(gpio, GPIO_LED);
