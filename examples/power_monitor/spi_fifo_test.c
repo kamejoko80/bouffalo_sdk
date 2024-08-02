@@ -8,6 +8,9 @@
 static struct bflb_device_s *spi0;
 static struct bflb_device_s *gpio;
 
+#define clr_cs_pin() bflb_gpio_reset(gpio, GPIO_PIN_28)
+#define set_cs_pin() bflb_gpio_set(gpio, GPIO_PIN_28)
+
 static void spi_gpio_init(void)
 {
     gpio = bflb_device_get_by_name("gpio");
@@ -24,6 +27,8 @@ static void spi_gpio_init(void)
 
 static void spi_init(uint8_t baudmhz)
 {
+
+#if 0
     struct bflb_spi_config_s spi_cfg = {
         .freq = baudmhz * 1000 * 1000,
         .role = SPI_ROLE_MASTER,
@@ -39,19 +44,27 @@ static void spi_init(uint8_t baudmhz)
     bflb_spi_init(spi0, &spi_cfg);
     bflb_spi_feature_control(spi0, SPI_CMD_SET_CS_INTERVAL, 1);
     bflb_spi_feature_control(spi0, SPI_CMD_SET_DATA_WIDTH, SPI_DATA_WIDTH_8BIT);
+#endif
+
+    spi0 = bflb_device_get_by_name("spi0");
+    bflb_spi_feature_control(spi0, SPI_CMD_SET_CS_INTERVAL, 1);
 }
 
 void spi_fifo_interface_bus_init(void)
 {
     spi_gpio_init();
-    spi_init(12);
+    spi_init(30);
 }
 
 void spi_fifo_test(uint8_t cmd)
 {
-    uint8_t p_tx[2];
+    uint8_t p_tx[4];
 
     p_tx[0] = cmd;
     p_tx[1] = 0;
-    bflb_spi_poll_exchange(spi0, p_tx, NULL, 2);
+    p_tx[2] = 0;
+    p_tx[3] = 0;
+    clr_cs_pin();
+    bflb_spi_poll_exchange(spi0, p_tx, NULL, 4);
+    set_cs_pin();
 }

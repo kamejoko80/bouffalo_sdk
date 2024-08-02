@@ -71,7 +71,7 @@ int main(void)
     while(!bflb_gpio_read(gpio, BOOT_PIN))
     {
         spi_fifo_test(i++);
-        bflb_mtimer_delay_ms(300);
+        bflb_mtimer_delay_ms(50);
     }
 
     /* turn off the led */

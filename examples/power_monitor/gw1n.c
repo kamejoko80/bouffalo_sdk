@@ -139,7 +139,7 @@ void gowin_fpga_config(void)
 
     /* Init dedicated spi for the FPGA config */
     gowin_spi0_gpio_init();
-    gowin_spi0_init(20);
+    gowin_spi0_init(30);
 
     data = gowin_read(0x11000000);
 
