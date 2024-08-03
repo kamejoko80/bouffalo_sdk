@@ -55,9 +55,9 @@ void sspi_test(uint8_t cmd)
 
 void spi_ctrl_send_byte(uint8_t byte)
 {
-    uint8_t p_tx[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
+    uint8_t p_tx[5] = {0x00};
     p_tx[0] = byte;
-    bflb_spi_poll_exchange(spi0, p_tx, NULL, 4);
+    bflb_spi_poll_exchange(spi0, p_tx, NULL, 1);
 }
 
 void spi_ctrl_cmd_read_gw_version(void)
