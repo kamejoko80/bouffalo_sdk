@@ -86,10 +86,14 @@ void spi_ctrl_cmd_reset_fifo(void)
     cdc_acm_printf("Reset fifo ack    = %X\r\n", p_rx[2]);
 }
 
-void spi_ctrl_cmd_write_data_len(void)
+void spi_ctrl_cmd_write_data_len(uint16_t len)
 {
-    uint8_t p_tx[4] = {0x02, 0xAA, 0x55, 0x00};
+    uint8_t p_tx[4] = {0x02, 0x00, 0x00, 0x00};
     uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
+    
+    p_tx[1] = (uint8_t)(len >> 8);
+    p_tx[2] = (uint8_t)(len);
+    
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
     cdc_acm_printf("Write dt len ack  = %X\r\n", p_rx[3]);
 }
@@ -99,13 +103,13 @@ void spi_ctrl_cmd_read_data_len(void)
     uint8_t p_tx[4] = {0x03, 0x00, 0x00, 0x00};
     uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
-    cdc_acm_printf("Read data len     = %X %X\r\n", p_rx[2], p_rx[3]);
+    cdc_acm_printf("Read data len     = %d\r\n", (uint16_t)((p_rx[2] << 8) | p_rx[3]));
 }
 
 void spi_ctrl_cmd_write_data(void)
 {
-    uint8_t p_tx[8] = {0x04, 0x00, 0x00, 0x00, 0x11, 0x22, 0x33, 0x44};
-    bflb_spi_poll_exchange(spi0, p_tx, NULL, 8);
+    uint8_t p_tx[20] = {0x04, 0x00, 0x00, 0x00, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    bflb_spi_poll_exchange(spi0, p_tx, NULL, 20);
 }
 
 void spi_ctrl_cmd_read_data(void)
@@ -113,7 +117,6 @@ void spi_ctrl_cmd_read_data(void)
     uint8_t p_tx[8] = {0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     uint8_t p_rx[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 8);
-    cdc_acm_printf("Read data len     = %X %X\r\n", p_rx[2], p_rx[3]);
     cdc_acm_printf("Read data         = %X %X %X %X\r\n", p_rx[4], p_rx[5], p_rx[6], p_rx[7]);
 }
 
