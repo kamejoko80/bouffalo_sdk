@@ -74,14 +74,8 @@ int main(void)
     {
         while(!bflb_gpio_read(gpio, BOOT_PIN));
         while(bflb_gpio_read(gpio, BOOT_PIN));
-        printf("Write data...\r\n");
         spi_ctrl_cmd_write_data_len(16);
         spi_ctrl_cmd_write_data();
-        spi_ctrl_cmd_read_tx_fifo_level();
-
-        while(!bflb_gpio_read(gpio, BOOT_PIN));
-        while(bflb_gpio_read(gpio, BOOT_PIN));
-        printf("Check tx fifo level...\r\n");
         spi_ctrl_cmd_read_tx_fifo_level();
     }
 #endif

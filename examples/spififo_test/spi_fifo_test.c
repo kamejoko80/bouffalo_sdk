@@ -49,7 +49,7 @@ void spi_init(uint8_t baudmhz)
 void spi_fifo_interface_bus_init(void)
 {
     spi_gpio_init();
-    spi_init(30);
+    spi_init(48);
 }
 
 void spi_ctrl_send_byte(uint8_t byte)
