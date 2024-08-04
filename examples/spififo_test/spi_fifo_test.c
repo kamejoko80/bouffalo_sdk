@@ -94,7 +94,7 @@ void spi_ctrl_cmd_write_data_len(uint16_t len)
     p_tx[2] = (uint8_t)(len);
     
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
-    printf("Write dt len ack  = %X\r\n", p_rx[3]);
+    printf("Write dt len/ack  = %d %d\r\n", len, p_rx[3]);
 }
 
 void spi_ctrl_cmd_read_data_len(void)
@@ -108,7 +108,8 @@ void spi_ctrl_cmd_read_data_len(void)
 void spi_ctrl_cmd_write_data(void)
 {
     uint8_t p_tx[20] = {0x04, 0x00, 0x00, 0x00, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
-    bflb_spi_poll_exchange(spi0, p_tx, NULL, 20);
+    bflb_spi_poll_exchange(spi0, p_tx, NULL, 20);   
+    printf("Write data\r\n");
 }
 
 void spi_ctrl_cmd_read_data(void)

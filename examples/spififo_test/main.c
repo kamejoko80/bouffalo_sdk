@@ -54,7 +54,7 @@ int main(void)
         spi_ctrl_cmd_read_gw_version();
         spi_ctrl_cmd_read_chip_id();
         //spi_ctrl_cmd_reset_fifo();
-        spi_ctrl_cmd_write_data_len(512);
+        spi_ctrl_cmd_write_data_len(16);
         spi_ctrl_cmd_read_data_len();
         spi_ctrl_cmd_write_data();
         spi_ctrl_cmd_read_tx_fifo_level();
