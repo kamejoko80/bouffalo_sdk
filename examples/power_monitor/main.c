@@ -30,6 +30,8 @@ void spi_ctrl_cmd_write_data(void);
 void spi_ctrl_cmd_read_data(void);
 void spi_ctrl_cmd_read_tx_fifo_level(void);
 void spi_ctrl_cmd_read_rx_fifo_level(void);
+void spi_ctrl_cmd_write_data_with_given_data_len(void);
+void spi_ctrl_data_receive_loop(void);
 
 void gpio_init(void)
 {
@@ -101,7 +103,7 @@ int main(void)
     }
 #endif
 
-#if 1
+#if 0
     while(1)
     {
         cdc_acm_printf("Press button to read GW version\r\n");
@@ -110,13 +112,38 @@ int main(void)
         spi_ctrl_cmd_read_gw_version();
         spi_ctrl_cmd_read_chip_id();
         //spi_ctrl_cmd_reset_fifo();
-        spi_ctrl_cmd_write_data_len(1024);
+        spi_ctrl_cmd_write_data_len(4);
         spi_ctrl_cmd_read_data_len();
         spi_ctrl_cmd_write_data();
         spi_ctrl_cmd_read_tx_fifo_level();
         spi_ctrl_cmd_read_rx_fifo_level();
         spi_ctrl_cmd_read_data();
     }
+#endif
+
+#if 0
+    while(1)
+    {
+        cdc_acm_printf("Press button to read GW version\r\n");
+        while(!bflb_gpio_read(gpio, BOOT_PIN));
+        while(bflb_gpio_read(gpio, BOOT_PIN));
+        spi_ctrl_cmd_read_gw_version();
+        spi_ctrl_cmd_read_chip_id();
+        spi_ctrl_cmd_read_data_len();
+        spi_ctrl_cmd_write_data_with_given_data_len();
+        spi_ctrl_cmd_read_tx_fifo_level();
+        spi_ctrl_cmd_read_rx_fifo_level();
+        spi_ctrl_cmd_read_data();
+    }
+#endif
+
+#if 1
+    cdc_acm_printf("Press button to read GW version\r\n");
+    while(!bflb_gpio_read(gpio, BOOT_PIN));
+    while(bflb_gpio_read(gpio, BOOT_PIN));
+    spi_ctrl_cmd_read_gw_version();
+    spi_ctrl_cmd_read_chip_id();
+    spi_ctrl_data_receive_loop();
 #endif
 
     /* turn off the led */
