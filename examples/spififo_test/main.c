@@ -43,9 +43,9 @@ int main(void)
         printf("Sending cmd 0x01\r\n");
         spi_ctrl_send_byte(0x01);
     }
-#endif    
-    
-#if 1
+#endif
+
+#if 0
     while(1)
     {
         printf("Press button to read GW version\r\n");
@@ -60,6 +60,29 @@ int main(void)
         spi_ctrl_cmd_read_tx_fifo_level();
         spi_ctrl_cmd_read_rx_fifo_level();
         spi_ctrl_cmd_read_data();
+    }
+#endif
+
+#if 1
+    printf("Press button to read GW version\r\n");
+    while(!bflb_gpio_read(gpio, BOOT_PIN));
+    while(bflb_gpio_read(gpio, BOOT_PIN));
+    spi_ctrl_cmd_read_gw_version();
+    spi_ctrl_cmd_read_chip_id();
+
+    while(1)
+    {
+        while(!bflb_gpio_read(gpio, BOOT_PIN));
+        while(bflb_gpio_read(gpio, BOOT_PIN));
+        printf("Write data...\r\n");
+        spi_ctrl_cmd_write_data_len(16);
+        spi_ctrl_cmd_write_data();
+        spi_ctrl_cmd_read_tx_fifo_level();
+
+        while(!bflb_gpio_read(gpio, BOOT_PIN));
+        while(bflb_gpio_read(gpio, BOOT_PIN));
+        printf("Check tx fifo level...\r\n");
+        spi_ctrl_cmd_read_tx_fifo_level();
     }
 #endif
 
