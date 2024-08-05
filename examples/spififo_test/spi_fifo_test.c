@@ -13,6 +13,15 @@
 static struct bflb_device_s *spi0;
 static struct bflb_device_s *gpio;
 
+static volatile uint8_t data_valid = 0;
+
+static void gpio10_isr(uint8_t pin)
+{
+    if (pin == GPIO_PIN_10) {
+        data_valid = 1;
+    }
+}
+
 void spi_gpio_init(void)
 {
     gpio = bflb_device_get_by_name("gpio");
@@ -25,6 +34,16 @@ void spi_gpio_init(void)
     bflb_gpio_init(gpio, GPIO_PIN_14, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_SMT_EN | GPIO_DRV_1);
     /* spi mosi */
     bflb_gpio_init(gpio, GPIO_PIN_15, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_SMT_EN | GPIO_DRV_1);
+    
+    /* GPIO11 as input (txfifo_empty_b) */   
+    bflb_gpio_init(gpio, GPIO_PIN_11, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0);
+    
+    /* configure MCU_IO10 as external interrupt gpio (rdata_valid_b) */
+    bflb_irq_disable(gpio->irq_num);
+    bflb_gpio_init(gpio, GPIO_PIN_10, GPIO_INPUT | GPIO_SMT_EN);
+    bflb_gpio_int_init(gpio, GPIO_PIN_10, GPIO_INT_TRIG_MODE_SYNC_RISING_EDGE);
+    bflb_gpio_irq_attach(GPIO_PIN_10, gpio10_isr);
+    bflb_irq_enable(gpio->irq_num);
 }
 
 void spi_init(uint8_t baudmhz)
@@ -49,7 +68,7 @@ void spi_init(uint8_t baudmhz)
 void spi_fifo_interface_bus_init(void)
 {
     spi_gpio_init();
-    spi_init(48);
+    spi_init(30);
 }
 
 void spi_ctrl_send_byte(uint8_t byte)
@@ -107,9 +126,20 @@ void spi_ctrl_cmd_read_data_len(void)
 
 void spi_ctrl_cmd_write_data(void)
 {
-    uint8_t p_tx[20] = {0x04, 0x00, 0x00, 0x00, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
+    uint8_t p_tx[20] = {0x04, 0x00, 0x00, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0xA5};
     bflb_spi_poll_exchange(spi0, p_tx, NULL, 20);   
     printf("Write data\r\n");
+}
+
+//  Write data with a given data length:
+//
+//  | cmd (0x0A) | len_h | len_l | dummy     | data1 | data2 | datan ..|
+//                               | ACK(0x01) |
+
+void spi_ctrl_cmd_write_data_with_given_data_len(void)
+{    
+    uint8_t p_tx[20] = {0x0A, 0x00, 0x10, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0xA5};
+    bflb_spi_poll_exchange(spi0, p_tx, NULL , 20);
 }
 
 void spi_ctrl_cmd_read_data(void)
@@ -134,4 +164,51 @@ void spi_ctrl_cmd_read_rx_fifo_level(void)
     uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
     printf("Rx fifo level     = %d\r\n", (uint16_t)((p_rx[2] << 16) | p_rx[3]));    
+}
+
+void spi_ctrl_data_receive_loop(void)
+{
+    uint8_t p_tx[20];
+    uint8_t p_rx[20];
+
+    uint16_t len;
+
+    printf("Running data recieving loop...\r\n");
+
+    while(1)
+    {
+        if(data_valid)
+        {
+            data_valid = 0;
+                        
+            /* command read data len */
+            p_tx[0] = 0x03;
+            bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
+            len = (uint16_t)((p_rx[2] << 8) | p_rx[3]);
+            printf("Read data len = %d\r\n", len);
+
+            /* read data */
+            p_tx[0] = 0x05;
+            bflb_spi_poll_exchange(spi0, p_tx, p_rx, len + 4);
+            printf("Read data     = ");
+            for(int i = 0; i < len; i++)
+            {
+                printf("%2X ", p_rx[4 + i]);
+            }
+            printf("\r\n");
+            
+            spi_ctrl_cmd_read_rx_fifo_level();
+            
+            /* small delay */
+            bflb_mtimer_delay_ms(1);
+                        
+            /* wait for tx fifo empty */
+            while(!bflb_gpio_read(gpio, GPIO_PIN_11));
+            
+            printf("Resend data\r\n");
+            
+            /* write data to the oponent */
+            spi_ctrl_cmd_write_data_with_given_data_len();
+        }
+    }
 }

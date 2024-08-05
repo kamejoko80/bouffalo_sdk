@@ -63,21 +63,15 @@ int main(void)
     }
 #endif
 
-#if 1
+#if 1 /* ping pong test */
     printf("Press button to read GW version\r\n");
     while(!bflb_gpio_read(gpio, BOOT_PIN));
     while(bflb_gpio_read(gpio, BOOT_PIN));
     spi_ctrl_cmd_read_gw_version();
     spi_ctrl_cmd_read_chip_id();
+    spi_ctrl_cmd_write_data_with_given_data_len();
+    spi_ctrl_data_receive_loop();
 
-    while(1)
-    {
-        while(!bflb_gpio_read(gpio, BOOT_PIN));
-        while(bflb_gpio_read(gpio, BOOT_PIN));
-        spi_ctrl_cmd_write_data_len(16);
-        spi_ctrl_cmd_write_data();
-        spi_ctrl_cmd_read_tx_fifo_level();
-    }
 #endif
 
     while (1) {

@@ -37,7 +37,10 @@ static void spi_gpio_init(void)
     /* spi mosi */
     bflb_gpio_init(gpio, GPIO_PIN_27, GPIO_FUNC_SPI0 | GPIO_ALTERNATE | GPIO_SMT_EN | GPIO_DRV_1);
 
-    /* configure MCU_IO1 as external interrupt gpio */
+    /* GPIO20 as input (txfifo_empty_a) */
+    bflb_gpio_init(gpio, GPIO_PIN_20, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0);
+
+    /* configure MCU_IO1 as external interrupt gpio (rdata_valid_a) */
     bflb_irq_disable(gpio->irq_num);
     bflb_gpio_init(gpio, GPIO_PIN_1, GPIO_INPUT | GPIO_SMT_EN);
     bflb_gpio_int_init(gpio, GPIO_PIN_1, GPIO_INT_TRIG_MODE_SYNC_RISING_EDGE);
@@ -160,10 +163,8 @@ void spi_ctrl_cmd_read_rx_fifo_level(void)
 
 void spi_ctrl_cmd_write_data_with_given_data_len(void)
 {
-    uint8_t p_tx[8] = {0x0A, 0x00, 0x04, 0x00, 0x11, 0x22, 0x33, 0x44};
-    uint8_t p_rx[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 8);
-    cdc_acm_printf("W dt with len ack = %d\r\n", p_rx[3]);
+    uint8_t p_tx[20] = {0x0A, 0x00, 0x10, 0x00, 0xAF, 0xAE, 0xAD, 0xAC, 0xAB, 0xAA, 0xA9, 0xA8, 0xA7, 0xA6, 0xA5, 0xA4, 0xA3, 0xA2, 0xA1, 0xA0};
+    bflb_spi_poll_exchange(spi0, p_tx, NULL, 20);
 }
 
 void spi_ctrl_data_receive_loop(void)
@@ -194,9 +195,21 @@ void spi_ctrl_data_receive_loop(void)
                 cdc_acm_printf("%2X ", p_rx[4 + i]);
             }
             cdc_acm_printf("\r\n");
+
+            spi_ctrl_cmd_read_rx_fifo_level();
+
+            /* small delay */
+            bflb_mtimer_delay_ms(1);
+
+            /* wait for tx fifo empty */
+            while(!bflb_gpio_read(gpio, GPIO_PIN_20));
+
+            cdc_acm_printf("Resend data\r\n");
             
+            /* write data to the oponent */
+            spi_ctrl_cmd_write_data_with_given_data_len();
+
             data_valid = 0;
         }
-        bflb_mtimer_delay_ms(50);
     }
 }

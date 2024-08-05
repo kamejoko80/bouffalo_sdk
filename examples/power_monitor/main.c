@@ -137,7 +137,7 @@ int main(void)
     }
 #endif
 
-#if 1
+#if 1 /* ping pong test */
     cdc_acm_printf("Press button to read GW version\r\n");
     while(!bflb_gpio_read(gpio, BOOT_PIN));
     while(bflb_gpio_read(gpio, BOOT_PIN));

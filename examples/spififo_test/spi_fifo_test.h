@@ -9,9 +9,10 @@ void spi_ctrl_cmd_reset_fifo(void);
 void spi_ctrl_cmd_write_data_len(uint16_t len);
 void spi_ctrl_cmd_read_data_len(void);
 void spi_ctrl_cmd_write_data(void);
+void spi_ctrl_cmd_write_data_with_given_data_len(void);
 void spi_ctrl_cmd_read_data(void);
 void spi_ctrl_cmd_read_tx_fifo_level(void);
 void spi_ctrl_cmd_read_rx_fifo_level(void);
-
+void spi_ctrl_data_receive_loop(void);
 
 #endif /* _SPI_FIFO_TEST_H_ */
