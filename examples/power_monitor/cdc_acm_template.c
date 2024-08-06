@@ -218,7 +218,13 @@ void cdc_acm_data_send_with_dtr_test(void)
 void cdc_acm_prints(char *str)
 {
     uint16_t len = strlen(str);
-    usbd_ep_start_write(CDC_IN_EP, (uint8_t*)str, len);
+
+    if (dtr_enable) {
+        ep_tx_busy_flag = true;
+        usbd_ep_start_write(CDC_IN_EP, (uint8_t*)str, len);
+        while (ep_tx_busy_flag) {
+        }
+    }
 }
 
 /* Must define global buffer */

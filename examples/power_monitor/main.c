@@ -7,6 +7,7 @@
 #include "board.h"
 #include "ina229.h"
 #include "tca9534.h"
+#include "bat_sim.h"
 #include "gw1n.h"
 
 #include <stdarg.h>  // For va_list
@@ -43,7 +44,8 @@ int main(void)
     gpio_init();
     tca9534_init();
 
-    //ina229_init();
+    /* turn off bat sim output soon as possible */
+    tca9534_pin_control(BAT_SIM_ENA, 0);
 
     /* initialize usb cdc acm */
     cdc_acm_init();
@@ -65,7 +67,16 @@ int main(void)
 
     cdc_acm_printf("Init INA229...\r\n");
     bflb_mtimer_delay_ms(200);
-    ina229_init();
+    //ina229_init();
+
+    cdc_acm_printf("Press button to test bat sim\r\n");
+    while(!bflb_gpio_read(gpio, BOOT_PIN));
+    while(bflb_gpio_read(gpio, BOOT_PIN));
+
+    bat_sim_read_config_data_code_epprom();
+    bat_sim_fast_mode_write(DATA_MAX_4P2);
+    tca9534_pin_control(BAT_SIM_ENA, 1);
+    cdc_acm_printf("Enable battery simulator output\r\n");
 
     while (1) {
         /* Check if user press boot pin */
