@@ -8,7 +8,6 @@
 #include <stdarg.h>
 
 static struct bflb_device_s *i2c0;
-extern void cdc_acm_printf(const char *format, ...);
 
 #define DEVICE_ADDR 0x38 // A0 = A1 = A2 = 0
 
@@ -76,13 +75,13 @@ void tca9534_init(void)
 
 /*  uint8_t value;
     value = tca9534_read_reg(0);
-    cdc_acm_printf("Reg 0 = %X\r\n", value);
+    printf("Reg 0 = %X\r\n", value);
     value = tca9534_read_reg(1);
-    cdc_acm_printf("Reg 1 = %X\r\n", value);
+    printf("Reg 1 = %X\r\n", value);
     value = tca9534_read_reg(2);
-    cdc_acm_printf("Reg 2 = %X\r\n", value);
+    printf("Reg 2 = %X\r\n", value);
     value = tca9534_read_reg(3);
-    cdc_acm_printf("Reg 3 = %X\r\n", value); */
+    printf("Reg 3 = %X\r\n", value); */
 }
 
 void tca9534_pin_control(power_ctrl_t ctrl, uint8_t set)

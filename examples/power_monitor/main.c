@@ -18,7 +18,6 @@
 static struct bflb_device_s *gpio;
 
 extern void cdc_acm_init(void);
-extern void cdc_acm_printf(const char *format, ...);
 extern void tca9534_test(void);
 
 void gpio_init(void)
@@ -51,22 +50,22 @@ int main(void)
     /* initialize usb cdc acm */
     cdc_acm_init();
 
-    cdc_acm_printf("Press button to start\r\n");
+    printf("Press button to start\r\n");
 
     /* Wait for user press boot button */
     //while(!bflb_gpio_read(gpio, BOOT_PIN));
     //while(bflb_gpio_read(gpio, BOOT_PIN));
 
-    cdc_acm_printf("Start program...\r\n");
+    printf("Start program...\r\n");
     bflb_gpio_reset(gpio, GPIO_LED);
 
-    cdc_acm_printf("Power on FPGA\r\n");
+    printf("Power on FPGA\r\n");
     gowin_power_off();
     gowin_power_on();
     bflb_mtimer_delay_ms(200);
     gowin_fpga_config();
 
-    //cdc_acm_printf("Press button to test bat sim\r\n");
+    //printf("Press button to test bat sim\r\n");
     //while(!bflb_gpio_read(gpio, BOOT_PIN));
     //while(bflb_gpio_read(gpio, BOOT_PIN));
 
@@ -74,9 +73,9 @@ int main(void)
     bat_sim_fast_mode_write(DATA_3P8);
     tca9534_pin_control(BAT_SIM_ENA, 1);
     tca9534_pin_control(VOL_MEASURE, 1);
-    cdc_acm_printf("Enable battery simulator output\r\n");
+    printf("Enable battery simulator output\r\n");
 
-    cdc_acm_printf("Init INA229...\r\n");
+    printf("Init INA229...\r\n");
     bflb_mtimer_delay_ms(200);
     ina229_init();
 
@@ -86,7 +85,7 @@ int main(void)
         {
             /* wait for button release */
             while(bflb_gpio_read(gpio, BOOT_PIN));
-            cdc_acm_printf("System will reset after 3s\r\n");
+            printf("System will reset after 3s\r\n");
 
             for(int i = 0; i < 3; i++)
             {
@@ -97,7 +96,7 @@ int main(void)
             }
 
             bflb_gpio_reset(gpio, GPIO_LED);
-            cdc_acm_printf("System reset!\r\n");
+            printf("System reset!\r\n");
             GLB_SW_System_Reset();
         }
     }

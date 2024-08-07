@@ -8,8 +8,6 @@
 static struct bflb_device_s *gpio;
 static struct bflb_device_s *spi0;
 
-extern void cdc_acm_printf(const char *format, ...);
-
 #define clr_cs_pin() bflb_gpio_reset(gpio, GPIO_PIN_28)
 #define set_cs_pin() bflb_gpio_set(gpio, GPIO_PIN_28)
 
@@ -135,7 +133,7 @@ void gowin_fpga_config(void)
 {
     uint32_t data;
 
-    cdc_acm_printf("Gowin FPGA programming\r\n");
+    printf("Gowin FPGA programming\r\n");
 
     /* Init dedicated spi for the FPGA config */
     gowin_spi0_gpio_init();
@@ -144,10 +142,10 @@ void gowin_fpga_config(void)
     data = gowin_read(0x11000000);
 
     if(data != 0x900281B) {
-        cdc_acm_printf("Error! Invalid device ID %X\r\n", data);
+        printf("Error! Invalid device ID %X\r\n", data);
         return;
     } else {
-        cdc_acm_printf("Found device ID %X\r\n", data);
+        printf("Found device ID %X\r\n", data);
     }
 
     /* Write enable */
@@ -168,9 +166,9 @@ void gowin_fpga_config(void)
     data = gowin_read(0x41000000);
 
     if (data != 0x1F020) {
-        cdc_acm_printf("Error! Bit stream download failed %X\r\n", data);
+        printf("Error! Bit stream download failed %X\r\n", data);
     } else {
-        cdc_acm_printf("Bit stream download successfully\r\n");
+        printf("Bit stream download successfully\r\n");
     }
 #endif
 }

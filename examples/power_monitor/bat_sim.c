@@ -28,19 +28,19 @@ void bat_sim_read_config_data_code_epprom(void)
 
     bflb_i2c_transfer(i2c0, msgs, 1);
 
-    cdc_acm_printf("Config data:\r\n");
-    cdc_acm_printf("RDY     = %X\r\n", (p_rx[0]>>7));
-    cdc_acm_printf("POR     = %X\r\n", (p_rx[0]>>6)&0x01);
-    cdc_acm_printf("PD1/PD0 = %X\r\n", (p_rx[0]>>1)&0x03);
-    cdc_acm_printf("DAC data:\r\n");
+    printf("Config data:\r\n");
+    printf("RDY     = %X\r\n", (p_rx[0]>>7));
+    printf("POR     = %X\r\n", (p_rx[0]>>6)&0x01);
+    printf("PD1/PD0 = %X\r\n", (p_rx[0]>>1)&0x03);
+    printf("DAC data:\r\n");
     temp = (uint16_t)((p_rx[1] << 8) | p_rx[2]);
     temp = temp >> 4;
-    cdc_acm_printf("DAC_H   = %X\r\n", (temp >> 8) & 0xFF);
-    cdc_acm_printf("DAC_L   = %X\r\n", (temp & 0xFF));
-    cdc_acm_printf("EEPROM data:\r\n");
-    cdc_acm_printf("PD1/PD0 = %X\r\n", (p_rx[3]>>5)&0x03);
-    cdc_acm_printf("EPR_H   = %X\r\n", (p_rx[3] | 0x0F));
-    cdc_acm_printf("EPR_L   = %X\r\n", (p_rx[4]));
+    printf("DAC_H   = %X\r\n", (temp >> 8) & 0xFF);
+    printf("DAC_L   = %X\r\n", (temp & 0xFF));
+    printf("EEPROM data:\r\n");
+    printf("PD1/PD0 = %X\r\n", (p_rx[3]>>5)&0x03);
+    printf("EPR_H   = %X\r\n", (p_rx[3] | 0x0F));
+    printf("EPR_L   = %X\r\n", (p_rx[4]));
 }
 
 void bat_sim_fast_mode_write(uint16_t data)
@@ -68,7 +68,7 @@ void bat_sim_fast_mode_write(uint16_t data)
     msgs[0].buffer = p_tx;
     msgs[0].length = 2;
 
-    cdc_acm_printf("Set voltage output: %f\r\n", (value * VCC)/4096);
+    printf("Set voltage output: %f\r\n", (value * VCC)/4096);
 
     bflb_i2c_transfer(i2c0, msgs, 1);
 }

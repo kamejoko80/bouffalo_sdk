@@ -12,8 +12,6 @@
 static struct bflb_device_s *spi0;
 static struct bflb_device_s *gpio;
 
-extern void cdc_acm_printf(const char *format, ...);
-
 void ina229_reg_read(uint8_t addr, uint8_t *value, uint8_t len);
 void ina229_reg_write(uint8_t addr, uint16_t value);
 
@@ -172,12 +170,12 @@ void ina229_init(void)
     ina229_reg_read(MANUFACTURER_ID, man_id, 3);
     ina229_reg_read(DEVICE_ID, device_id, 3);
 
-    cdc_acm_printf("Manufacturer ID = %x%x\r\n", man_id[1], man_id[2]);
-    cdc_acm_printf("Device ID       = %x%x\r\n", device_id[1], device_id[2]);
+    printf("Manufacturer ID = %x%x\r\n", man_id[1], man_id[2]);
+    printf("Device ID       = %x%x\r\n", device_id[1], device_id[2]);
 
     //ina229_reg_write(CONFIG, 0x7FFF);
     //ina229_reg_read(CONFIG, config, 3);
-    //cdc_acm_printf("Config Read     = %x%x\r\n", config[1], config[2]);
+    //printf("Config Read     = %x%x\r\n", config[1], config[2]);
 
     /*
      * Reset the ina229
@@ -271,7 +269,7 @@ void ina229_init(void)
                 current |= 0xFFF00000; // If the sign bit is set, extend the sign to the 32-bit value
             }
 
-            cdc_acm_printf("Vbus[V] = %f\t current[mA] = %f\r\n", vbus*VBUS_LSB_1, current*CURRENT_LSB_1*1000);
+            printf("Vbus[V] = %f\t current[mA] = %f\r\n", vbus*VBUS_LSB_1, current*CURRENT_LSB_1*1000);
             irq_flag = 0;
         }
     }
