@@ -19,7 +19,7 @@ void ina229_reg_write(uint8_t addr, uint16_t value);
 
 static volatile uint8_t irq_flag = 0;
 
-uint8_t vshunt_buff[4];
+uint8_t vbus_buff[4];
 uint8_t current_buff[4];
 
 static void gpio0_isr(uint8_t pin)
@@ -27,7 +27,7 @@ static void gpio0_isr(uint8_t pin)
     uint8_t diag_alrt[3];
     if (pin == GPIO_PIN_0) {
         ina229_reg_read(DIAG_ALRT, diag_alrt, 3);
-        ina229_reg_read(VSHUNT, vshunt_buff, 4);
+        ina229_reg_read(VBUS, vbus_buff, 4);
         ina229_reg_read(CURRENT, current_buff, 4);
         irq_flag = 1;
     }
@@ -163,9 +163,6 @@ void ina229_reg_write(uint8_t addr, uint16_t value)
  *
  */
 
-#define CURRENT_LSB 0.00000625
-#define VSHUNT_LSB  0.0000003125
-
 void ina229_init(void)
 {
     uint8_t man_id[3], device_id[3]; // config[3];
@@ -245,27 +242,28 @@ void ina229_init(void)
      *               6h => 512
      *               7h => 1024
      *
-     * Continuous shunt voltage only
-     * VSHCT -> 280µs
-     * AVG   -> 1024
+     * Continuous shunt and bus voltage
+     * VBUSCT -> 280µs
+     * VSHCT  -> 280µs
+     * AVG    -> 1024
      */
-    ina229_reg_write(ADC_CONFIG, (0xA << 12)|(0x4 << 6)| 0x07);
+    ina229_reg_write(ADC_CONFIG, (0xB << 12)|(0x3 << 9)|(0x3 << 6)| 0x07);
 
-    uint32_t vshunt_raw, current_raw;
-    int32_t vshunt, current;
+    uint32_t vbus_raw, current_raw;
+    int32_t vbus, current;
 
     while(1)
     {
         if(irq_flag)
         {
-            vshunt_raw = ((vshunt_buff[1] << 16) | (vshunt_buff[2] << 8) | vshunt_buff[3]) & 0xFFFFFF;
+            vbus_raw = ((vbus_buff[1] << 16) | (vbus_buff[2] << 8) | vbus_buff[3]) & 0xFFFFFF;
             current_raw = ((current_buff[1] << 16) | (current_buff[2] << 8) | current_buff[3]) & 0xFFFFFF;
-            vshunt = (vshunt_raw >> 4) & 0xFFFFF; // Extract bits [23:4]
+            vbus = (vbus_raw >> 4) & 0xFFFFF; // Extract bits [23:4]
             current = (current_raw >> 4) & 0xFFFFF; // Extract bits [23:4]
 
             // Convert the 20-bit two's complement value to a signed integer
-            if (vshunt & 0x80000) { // Check the sign bit (bit 19 in the 20-bit value)
-                vshunt |= 0xFFF00000; // If the sign bit is set, extend the sign to the 32-bit value
+            if (vbus & 0x80000) { // Check the sign bit (bit 19 in the 20-bit value)
+                vbus |= 0xFFF00000; // If the sign bit is set, extend the sign to the 32-bit value
             }
 
             // Convert the 20-bit two's complement value to a signed integer
@@ -273,8 +271,7 @@ void ina229_init(void)
                 current |= 0xFFF00000; // If the sign bit is set, extend the sign to the 32-bit value
             }
 
-            //cdc_acm_printf("vshunt[mV]  = %f\r\n", vshunt*VSHUNT_LSB*1000);
-            cdc_acm_printf("current[mA] = %f\r\n", current*CURRENT_LSB*1000);
+            cdc_acm_printf("Vbus[V] = %f\t current[mA] = %f\r\n", vbus*VBUS_LSB_1, current*CURRENT_LSB_1*1000);
             irq_flag = 0;
         }
     }

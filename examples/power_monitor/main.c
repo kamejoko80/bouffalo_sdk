@@ -46,6 +46,7 @@ int main(void)
 
     /* turn off bat sim output soon as possible */
     tca9534_pin_control(BAT_SIM_ENA, 0);
+    tca9534_pin_control(VOL_MEASURE, 0);
 
     /* initialize usb cdc acm */
     cdc_acm_init();
@@ -72,6 +73,7 @@ int main(void)
     bat_sim_read_config_data_code_epprom();
     bat_sim_fast_mode_write(DATA_3P8);
     tca9534_pin_control(BAT_SIM_ENA, 1);
+    tca9534_pin_control(VOL_MEASURE, 1);
     cdc_acm_printf("Enable battery simulator output\r\n");
 
     cdc_acm_printf("Init INA229...\r\n");
