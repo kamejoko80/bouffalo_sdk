@@ -50,12 +50,6 @@ int main(void)
     /* initialize usb cdc acm */
     cdc_acm_init();
 
-    printf("Press button to start\r\n");
-
-    /* Wait for user press boot button */
-    //while(!bflb_gpio_read(gpio, BOOT_PIN));
-    //while(bflb_gpio_read(gpio, BOOT_PIN));
-
     printf("Start program...\r\n");
     bflb_gpio_reset(gpio, GPIO_LED);
 
@@ -65,19 +59,15 @@ int main(void)
     bflb_mtimer_delay_ms(200);
     gowin_fpga_config();
 
-    //printf("Press button to test bat sim\r\n");
-    //while(!bflb_gpio_read(gpio, BOOT_PIN));
-    //while(bflb_gpio_read(gpio, BOOT_PIN));
-
     bat_sim_read_config_data_code_epprom();
     bat_sim_fast_mode_write(DATA_3P8);
     tca9534_pin_control(BAT_SIM_ENA, 1);
     tca9534_pin_control(VOL_MEASURE, 1);
     printf("Enable battery simulator output\r\n");
 
-    printf("Init INA229...\r\n");
-    bflb_mtimer_delay_ms(200);
-    ina229_init();
+    //printf("Init INA229...\r\n");
+    //bflb_mtimer_delay_ms(200);
+    //ina229_init();
 
     while (1) {
         /* Check if user press boot pin */

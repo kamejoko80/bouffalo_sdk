@@ -269,7 +269,7 @@ void ina229_init(void)
                 current |= 0xFFF00000; // If the sign bit is set, extend the sign to the 32-bit value
             }
 
-            printf("Vbus[V] = %f\t current[mA] = %f\r\n", vbus*VBUS_LSB_1, current*CURRENT_LSB_1*1000);
+            printf("Vbus[V] = %f\t current[mA] = %f\r\n", vbus*VBUS_LSB_0, current*CURRENT_LSB_0*1000);
             irq_flag = 0;
         }
     }

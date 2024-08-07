@@ -60,9 +60,9 @@
  */
 
 /* LSB in case ADCRANGE = 0 */
-#define CURRENT_LSB_1 0.00000625
-#define VSHUNT_LSB_1  0.0000003125
-#define VBUS_LSB_1    0.0001953125
+#define CURRENT_LSB_0 0.00000625
+#define VSHUNT_LSB_0  0.0000003125
+#define VBUS_LSB_0    0.0001953125
 
 void ina229_init(void);
 void ina229_enable_alert_interrupt(void);

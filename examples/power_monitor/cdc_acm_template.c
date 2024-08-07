@@ -104,8 +104,11 @@ static const uint8_t cdc_descriptor[] = {
     0x00
 };
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[2048];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[2048];
+#define WR_BUFF_SIZE (256)
+#define RD_BUFF_SIZE (2048 + 4)
+
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[RD_BUFF_SIZE];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[WR_BUFF_SIZE];
 
 volatile bool ep_tx_busy_flag = false;
 
@@ -130,7 +133,7 @@ void usbd_event_handler(uint8_t event)
             break;
         case USBD_EVENT_CONFIGURED:
             /* setup first out ep read transfer */
-            usbd_ep_start_read(CDC_OUT_EP, read_buffer, 2048);
+            usbd_ep_start_read(CDC_OUT_EP, read_buffer, RD_BUFF_SIZE);
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
@@ -142,15 +145,69 @@ void usbd_event_handler(uint8_t event)
     }
 }
 
+/*************************************************************************************************
+ *                 COMMUNICATION COMMAND DESCRIPTION
+ *
+ * Command format:
+ *
+ *      [B0]    [B1]       [B2]        [B3]
+ *      [cmd]   [param 0]  [param 1]   [param 2]
+ *
+ * Command list:
+ *
+ * [idx][cmd]   [param 0]  [param 1]   [param 2]
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x00     0x00     0x00        0x00      : NOP
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x01     0x00     0x00        0x00      : Reset INA229
+ *  [0] 0x01     0x0/1    0x00        0x00      : Response
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x02     CT       AVG         0x00      : Set VBUSCT & VSHCT conversion time(CT), AVG count
+ *  [0] 0x02     0x0/1    0x00        0x00      : Response
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x03     ADCR     0x00        0x00      : Set ADCRANGE 0/1
+ *  [0] 0x03     0x0/1    0x00        0x00      : Response
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x04     ACOMP    0x00        0x00      : Set ALERT comparison on the averaged value (ACOMP = 0/1)
+ *  [0] 0x04     0x0/1    0x00        0x00      : Response
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x05     0x00     0x00        0x00      : Configure the INA229 with the above parameters
+ *  [0] 0x05     0x0/1    0x00        0x00      : Response
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x06     VAL_H    VAL_L       0x00      : Set battery simulator volatge
+ *  [0] 0x06     0x0/1    0x00        0x00      : Response
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x07     0x01     0x00        0x00      : Battery simulator volatge output enable
+ *  [0] 0x07     0x00     0x00        0x00      : Battery simulator volatge output disable
+ *  [0] 0x07     0x0/1    0x00        0x00      : Response
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x08     0x00     0x00        0x00      : Start measuring
+ *                                              : No respond
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x09     0x00     0x00        0x00      : Stop measuring
+ *                                              : No respond
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x0A     LEN_H    LEN_L       0x00      : Data streaming report (LEN = 2048 bytes)
+ *  [1] V[3]     V[2]     V[1]        V[0]      : Voltage data [V] (first half is voltage)
+ *  [2] V[3]     V[2]     V[1]        V[0]      :
+ *  .....................................       :
+ *  [n] I[3]     I[2]     I[1]        I[0]      : Current [mA] (second half is current)
+ *  [m] I[3]     I[2]     I[1]        I[0]      :
+ * --------------------------------------------------------------------------------------------
+ *
+ *************************************************************************************************/
+
 void usbd_cdc_acm_bulk_out(uint8_t ep, uint32_t nbytes)
 {
-    USB_LOG_RAW("actual out len:%d\r\n", nbytes);
-    // for (int i = 0; i < 100; i++) {
-    //     printf("%02x ", read_buffer[i]);
-    // }
-    // printf("\r\n");
+    printf("actual out len:%d\r\n", nbytes);
+
+    for (int i = 0; i < nbytes; i++) {
+         printf("%02x ", read_buffer[i]);
+    }
+    printf("\r\n");
+
     /* setup next out ep read transfer */
-    usbd_ep_start_read(CDC_OUT_EP, read_buffer, 2048);
+    usbd_ep_start_read(CDC_OUT_EP, read_buffer, RD_BUFF_SIZE);
 }
 
 void usbd_cdc_acm_bulk_in(uint8_t ep, uint32_t nbytes)
@@ -181,10 +238,8 @@ struct usbd_interface intf1;
 
 void cdc_acm_init(void)
 {
-    const uint8_t data[10] = { 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30 };
-
-    memcpy(&write_buffer[0], data, 10);
-    memset(&write_buffer[10], 'a', 2038);
+    memset(&write_buffer[0], 0, WR_BUFF_SIZE);
+    memset(&read_buffer[0],  0, RD_BUFF_SIZE);
 
     usbd_desc_register(cdc_descriptor);
     usbd_add_interface(usbd_cdc_acm_init_intf(&intf0));
@@ -209,7 +264,7 @@ void cdc_acm_data_send_with_dtr_test(void)
 {
     if (dtr_enable) {
         ep_tx_busy_flag = true;
-        usbd_ep_start_write(CDC_IN_EP, write_buffer, 2048);
+        usbd_ep_start_write(CDC_IN_EP, write_buffer, WR_BUFF_SIZE);
         while (ep_tx_busy_flag) {
         }
     }
