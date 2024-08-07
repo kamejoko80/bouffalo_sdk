@@ -70,16 +70,16 @@ typedef struct {
 } response_t;
 
 typedef enum {
-    CMD_NOP = 0,
-    CMD_RESET_INA229 = 0x01,
-    CMD_CONVERSION_TIME = 0x02,
-    CMD_SET_ADCRANGE = 0x03,
+    CMD_NOP                = 0x00,
+    CMD_RESET_INA229       = 0x01,
+    CMD_CONVERSION_TIME    = 0x02,
+    CMD_SET_ADCRANGE       = 0x03,
     CMD_SET_ALERT_COMP_AVG = 0x04,
-    CMD_CONFIG_INA229 = 0x05,
-    CMD_SET_BAT_SIM_VOLT = 0x06,
-    CMD_BAT_SIM_OUTPUT = 0x07,
-    CMD_START_MESURE = 0x08,
-    CMD_STOP_MESURE = 0x09
+    CMD_CONFIG_INA229      = 0x05,
+    CMD_SET_BAT_SIM_VOLT   = 0x06,
+    CMD_BAT_SIM_OUTPUT     = 0x07,
+    CMD_START_MESURE       = 0x08,
+    CMD_STOP_MESURE        = 0x09
 } cmd_code_t;
 
 void cmd_process(uint8_t *cmd_buff, uint32_t len);

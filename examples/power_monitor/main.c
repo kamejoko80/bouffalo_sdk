@@ -65,9 +65,9 @@ int main(void)
     tca9534_pin_control(VOL_MEASURE, 1);
     printf("Enable battery simulator output\r\n");
 
-    //printf("Init INA229...\r\n");
-    //bflb_mtimer_delay_ms(200);
-    //ina229_init();
+    printf("Init INA229...\r\n");
+    bflb_mtimer_delay_ms(200);
+    ina229_init();
 
     while (1) {
         /* Check if user press boot pin */

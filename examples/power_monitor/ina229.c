@@ -15,10 +15,17 @@ static struct bflb_device_s *gpio;
 void ina229_reg_read(uint8_t addr, uint8_t *value, uint8_t len);
 void ina229_reg_write(uint8_t addr, uint16_t value);
 
-static volatile uint8_t irq_flag = 0;
+/* Default ina229 configuration */
+ina229_config_t ina229_config = {
+    .cnv_time  = CONV_TIME_540uS,
+    .avg_num   = AVG_NUM_1024,
+    .adc_range = ADC_RANGE_0,
+    .avg_alert = AVG_ALERT_YES
+};
 
-uint8_t vbus_buff[4];
-uint8_t current_buff[4];
+static volatile uint8_t irq_flag = 0;
+static uint8_t vbus_buff[4];
+static uint8_t current_buff[4];
 
 static void gpio0_isr(uint8_t pin)
 {
@@ -126,6 +133,22 @@ void ina229_reg_write(uint8_t addr, uint16_t value)
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 3);
 }
 
+void ina229_reset(void)
+{
+    ina229_reg_write(CONFIG, (0x1 << 15));
+    bflb_mtimer_delay_ms(10);
+}
+
+void ina229_start_measure(ina229_config_t *config)
+{
+    ina229_reg_write(ADC_CONFIG, (0xB << 12) | (config->cnv_time << 9) | (config->cnv_time << 6) | config->avg_num);
+}
+
+void ina229_stop_measure(ina229_config_t *config)
+{
+    ina229_reg_write(ADC_CONFIG, (config->cnv_time << 9) | (config->cnv_time << 6) | config->avg_num);
+}
+
 /*
  * Full scale ranges:
  *    Shunt voltage:
@@ -161,21 +184,14 @@ void ina229_reg_write(uint8_t addr, uint16_t value)
  *
  */
 
-void ina229_init(void)
+void ina229_param_config(ina229_config_t *config)
 {
-    uint8_t man_id[3], device_id[3]; // config[3];
-
-    ina229_interface_bus_init();
+    uint8_t man_id[3], device_id[3];
 
     ina229_reg_read(MANUFACTURER_ID, man_id, 3);
     ina229_reg_read(DEVICE_ID, device_id, 3);
-
     printf("Manufacturer ID = %x%x\r\n", man_id[1], man_id[2]);
     printf("Device ID       = %x%x\r\n", device_id[1], device_id[2]);
-
-    //ina229_reg_write(CONFIG, 0x7FFF);
-    //ina229_reg_read(CONFIG, config, 3);
-    //printf("Config Read     = %x%x\r\n", config[1], config[2]);
 
     /*
      * Reset the ina229
@@ -187,6 +203,7 @@ void ina229_init(void)
      */
     ina229_reg_write(CONFIG, (0x1 << 15));
     bflb_mtimer_delay_ms(200);
+    ina229_reg_write(CONFIG, (config->adc_range << 4));
 
     /* shunt calibration */
     ina229_reg_write(SHUNT_CAL, 4096);
@@ -197,7 +214,7 @@ void ina229_init(void)
      * SLOWALERT[13]: 1h = ALERT comparison on averaged value
      * APOL[12]     : 0h = Normal (Active-low, open-drain)
      */
-    ina229_reg_write(DIAG_ALRT, (0x1 << 14) | (0x1 << 13) | (0x0 << 12));
+    ina229_reg_write(DIAG_ALRT, (0x1 << 14) | (config->avg_alert << 13) | (0x0 << 12));
 
     /* enable alert interrupt */
     ina229_enable_alert_interrupt();
@@ -245,7 +262,14 @@ void ina229_init(void)
      * VSHCT  -> 280µs
      * AVG    -> 1024
      */
-    ina229_reg_write(ADC_CONFIG, (0xB << 12)|(0x3 << 9)|(0x3 << 6)| 0x07);
+    ina229_reg_write(ADC_CONFIG, (config->cnv_time << 9) | (config->cnv_time << 6) | config->avg_num);
+}
+
+void ina229_init(void)
+{
+    ina229_interface_bus_init();
+
+    ina229_param_config(&ina229_config);
 
     uint32_t vbus_raw, current_raw;
     int32_t vbus, current;
