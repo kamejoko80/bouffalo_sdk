@@ -5,6 +5,7 @@
 
 #include "usbd_core.h"
 #include "usbd_cdc.h"
+#include "cmd.h"
 
 /*!< endpoint address */
 #define CDC_IN_EP  0x81
@@ -104,12 +105,13 @@ static const uint8_t cdc_descriptor[] = {
     0x00
 };
 
-#define WR_BUFF_SIZE (256)
-#define RD_BUFF_SIZE (2048 + 4)
+#define WR_BUFF_SIZE (2048 + 4)
+#define RD_BUFF_SIZE (256)
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[RD_BUFF_SIZE];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[WR_BUFF_SIZE];
 
+volatile uint8_t *p_wr_buf = &write_buffer[0];
 volatile bool ep_tx_busy_flag = false;
 
 #ifdef CONFIG_USB_HS
@@ -145,66 +147,17 @@ void usbd_event_handler(uint8_t event)
     }
 }
 
-/*************************************************************************************************
- *                 COMMUNICATION COMMAND DESCRIPTION
- *
- * Command format:
- *
- *      [B0]    [B1]       [B2]        [B3]
- *      [cmd]   [param 0]  [param 1]   [param 2]
- *
- * Command list:
- *
- * [idx][cmd]   [param 0]  [param 1]   [param 2]
- * --------------------------------------------------------------------------------------------
- *  [0] 0x00     0x00     0x00        0x00      : NOP
- * --------------------------------------------------------------------------------------------
- *  [0] 0x01     0x00     0x00        0x00      : Reset INA229
- *  [0] 0x01     0x0/1    0x00        0x00      : Response
- * --------------------------------------------------------------------------------------------
- *  [0] 0x02     CT       AVG         0x00      : Set VBUSCT & VSHCT conversion time(CT), AVG count
- *  [0] 0x02     0x0/1    0x00        0x00      : Response
- * --------------------------------------------------------------------------------------------
- *  [0] 0x03     ADCR     0x00        0x00      : Set ADCRANGE 0/1
- *  [0] 0x03     0x0/1    0x00        0x00      : Response
- * --------------------------------------------------------------------------------------------
- *  [0] 0x04     ACOMP    0x00        0x00      : Set ALERT comparison on the averaged value (ACOMP = 0/1)
- *  [0] 0x04     0x0/1    0x00        0x00      : Response
- * --------------------------------------------------------------------------------------------
- *  [0] 0x05     0x00     0x00        0x00      : Configure the INA229 with the above parameters
- *  [0] 0x05     0x0/1    0x00        0x00      : Response
- * --------------------------------------------------------------------------------------------
- *  [0] 0x06     VAL_H    VAL_L       0x00      : Set battery simulator volatge
- *  [0] 0x06     0x0/1    0x00        0x00      : Response
- * --------------------------------------------------------------------------------------------
- *  [0] 0x07     0x01     0x00        0x00      : Battery simulator volatge output enable
- *  [0] 0x07     0x00     0x00        0x00      : Battery simulator volatge output disable
- *  [0] 0x07     0x0/1    0x00        0x00      : Response
- * --------------------------------------------------------------------------------------------
- *  [0] 0x08     0x00     0x00        0x00      : Start measuring
- *                                              : No respond
- * --------------------------------------------------------------------------------------------
- *  [0] 0x09     0x00     0x00        0x00      : Stop measuring
- *                                              : No respond
- * --------------------------------------------------------------------------------------------
- *  [0] 0x0A     LEN_H    LEN_L       0x00      : Data streaming report (LEN = 2048 bytes)
- *  [1] V[3]     V[2]     V[1]        V[0]      : Voltage data [V] (first half is voltage)
- *  [2] V[3]     V[2]     V[1]        V[0]      :
- *  .....................................       :
- *  [n] I[3]     I[2]     I[1]        I[0]      : Current [mA] (second half is current)
- *  [m] I[3]     I[2]     I[1]        I[0]      :
- * --------------------------------------------------------------------------------------------
- *
- *************************************************************************************************/
-
 void usbd_cdc_acm_bulk_out(uint8_t ep, uint32_t nbytes)
 {
-    printf("actual out len:%d\r\n", nbytes);
+    //printf("actual out len:%d\r\n", nbytes);
 
-    for (int i = 0; i < nbytes; i++) {
-         printf("%02x ", read_buffer[i]);
-    }
-    printf("\r\n");
+    //for (int i = 0; i < nbytes; i++) {
+    //     printf("%02x ", read_buffer[i]);
+    //}
+    //printf("\r\n");
+
+    /* command processing */
+    cmd_process(read_buffer, nbytes);
 
     /* setup next out ep read transfer */
     usbd_ep_start_read(CDC_OUT_EP, read_buffer, RD_BUFF_SIZE);
@@ -212,7 +165,7 @@ void usbd_cdc_acm_bulk_out(uint8_t ep, uint32_t nbytes)
 
 void usbd_cdc_acm_bulk_in(uint8_t ep, uint32_t nbytes)
 {
-    USB_LOG_RAW("actual in len:%d\r\n", nbytes);
+    //USB_LOG_RAW("actual in len:%d\r\n", nbytes);
 
     if ((nbytes % CDC_MAX_MPS) == 0 && nbytes) {
         /* send zlp */
@@ -268,6 +221,11 @@ void cdc_acm_data_send_with_dtr_test(void)
         while (ep_tx_busy_flag) {
         }
     }
+}
+
+void cdc_acm_data_send(uint32_t len)
+{
+    usbd_ep_start_write(CDC_IN_EP, write_buffer, len);
 }
 
 void cdc_acm_prints(char *str)
