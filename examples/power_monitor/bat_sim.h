@@ -14,6 +14,7 @@
 
 #define VCC          (4.75)
 #define DATA_MAX_4P2 (3622)
+#define DATA_3P8     (3350)
 
 void bat_sim_read_config_data_code_epprom(void);
 void bat_sim_fast_mode_write(uint16_t data);

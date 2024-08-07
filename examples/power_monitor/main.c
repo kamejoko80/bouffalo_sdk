@@ -53,8 +53,8 @@ int main(void)
     cdc_acm_printf("Press button to start\r\n");
 
     /* Wait for user press boot button */
-    while(!bflb_gpio_read(gpio, BOOT_PIN));
-    while(bflb_gpio_read(gpio, BOOT_PIN));
+    //while(!bflb_gpio_read(gpio, BOOT_PIN));
+    //while(bflb_gpio_read(gpio, BOOT_PIN));
 
     cdc_acm_printf("Start program...\r\n");
     bflb_gpio_reset(gpio, GPIO_LED);
@@ -65,12 +65,12 @@ int main(void)
     bflb_mtimer_delay_ms(200);
     gowin_fpga_config();
 
-    cdc_acm_printf("Press button to test bat sim\r\n");
-    while(!bflb_gpio_read(gpio, BOOT_PIN));
-    while(bflb_gpio_read(gpio, BOOT_PIN));
+    //cdc_acm_printf("Press button to test bat sim\r\n");
+    //while(!bflb_gpio_read(gpio, BOOT_PIN));
+    //while(bflb_gpio_read(gpio, BOOT_PIN));
 
     bat_sim_read_config_data_code_epprom();
-    bat_sim_fast_mode_write(DATA_MAX_4P2);
+    bat_sim_fast_mode_write(DATA_3P8);
     tca9534_pin_control(BAT_SIM_ENA, 1);
     cdc_acm_printf("Enable battery simulator output\r\n");
 

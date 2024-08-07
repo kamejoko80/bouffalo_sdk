@@ -19,16 +19,16 @@ void ina229_reg_write(uint8_t addr, uint16_t value);
 
 static volatile uint8_t irq_flag = 0;
 
-uint8_t vshunt[4];
-uint8_t current[4];
+uint8_t vshunt_buff[4];
+uint8_t current_buff[4];
 
 static void gpio0_isr(uint8_t pin)
 {
     uint8_t diag_alrt[3];
     if (pin == GPIO_PIN_0) {
         ina229_reg_read(DIAG_ALRT, diag_alrt, 3);
-        ina229_reg_read(VSHUNT, vshunt, 4);
-        ina229_reg_read(CURRENT, current, 4);
+        ina229_reg_read(VSHUNT, vshunt_buff, 4);
+        ina229_reg_read(CURRENT, current_buff, 4);
         irq_flag = 1;
     }
 }
@@ -132,9 +132,9 @@ void ina229_reg_write(uint8_t addr, uint16_t value)
  * Full scale ranges:
  *    Shunt voltage:
  *        ±163.84 mV (ADCRANGE = 0)  312.5 nV/LSB
- *        ±40.96 mV  (ADCRANGE = 1) 78.125 nV/LSB 
+ *        ±40.96 mV  (ADCRANGE = 1) 78.125 nV/LSB
  *    Bus voltage:
- *        0V to 85V 195.3125 µV/LSB       
+ *        0V to 85V 195.3125 µV/LSB
  *    Temperature:
  *        –40°C to +125°C 7.8125 m°C/LSB
  *
@@ -148,24 +148,27 @@ void ina229_reg_write(uint8_t addr, uint16_t value)
  *    Power [W] = 3.2 x CURRENT_LSB x POWER
  *    POWER is the value read from the POWER register
  *
- *    Energy [J] = 16 x 3.2 x CURRENT_LSB x ENERGY 
- *    Charge [C] = CURRENT_LSB x CHARGE  
+ *    Energy [J] = 16 x 3.2 x CURRENT_LSB x ENERGY
+ *    Charge [C] = CURRENT_LSB x CHARGE
  *
  *    In case ADCRANGE = 0:
- *        Imax = 163.84mV / 50mΩ = 3.2768A 
- *        CURRENT_LSB = 3.2768 / 2^19 = 0.00000625A = 6.25µA    
+ *        Imax = 163.84mV / 50mΩ = 3.2768A
+ *        CURRENT_LSB = 3.2768 / 2^19 = 0.00000625A = 6.25µA
  *        SHUNT_CAL = 13107.2 x 10^6 x 0.00000625 x 0.05 = 4096
  *
  *    In case ADCRANGE = 1:
  *        Imax = 40.96mV / 50mΩ = 0.8192A
  *        CURRENT_LSB = 0.8192 / 2^19 = 0.0000015625A = 1.5625µA
  *        SHUNT_CAL = (13107.2 x 10^6 x 0.0000015625 x 0.05) x 4 = 4096
- *           
+ *
  */
+
+#define CURRENT_LSB 0.00000625
+#define VSHUNT_LSB  0.0000003125
 
 void ina229_init(void)
 {
-    uint8_t man_id[3], device_id[3], config[3];
+    uint8_t man_id[3], device_id[3]; // config[3];
 
     ina229_interface_bus_init();
 
@@ -179,12 +182,12 @@ void ina229_init(void)
     //ina229_reg_read(CONFIG, config, 3);
     //cdc_acm_printf("Config Read     = %x%x\r\n", config[1], config[2]);
 
-    /* 
-     * Reset the ina229 
+    /*
+     * Reset the ina229
      * RST[15]
      * RSTACC[14]
      * CONVDLY[13:6]
-     * TEMPCOMP[5] 
+     * TEMPCOMP[5]
      * ADCRANGE[4]
      */
     ina229_reg_write(CONFIG, (0x1 << 15));
@@ -205,14 +208,14 @@ void ina229_init(void)
     ina229_enable_alert_interrupt();
 
     /*
-     * MODE[15:12]:  
+     * MODE[15:12]:
      *               9h => Continuous bus voltage only
      *               ah => Continuous shunt voltage only
      *               bh => Continuous shunt and bus voltage
      *               ch => Continuous temperature only
      *               dh => Continuous bus voltage and temperature
-     *               eh => Continuous temperature and shunt voltage     
-     *               fh => Continuous bus voltage, shunt voltage and temperature  
+     *               eh => Continuous temperature and shunt voltage
+     *               fh => Continuous bus voltage, shunt voltage and temperature
      *
      * VBUSCT[11:9]: (doesn't works at 50, 84, 150µs)
      *               3h => 280µs
@@ -227,13 +230,13 @@ void ina229_init(void)
      *               6h => 2074µs
      *               7h => 4120µs
      * VTCT[5:3]:
-     *               3h => 280µs       
+     *               3h => 280µs
      *               4h => 540µs
      *               5h => 1052µs
      *               6h => 2074µs
      *               7h => 4120µs
      * AVG[2:0]:
-     *               0h =>  1 
+     *               0h =>  1
      *               1h =>  4
      *               2h => 16
      *               3h => 64
@@ -244,16 +247,34 @@ void ina229_init(void)
      *
      * Continuous shunt voltage only
      * VSHCT -> 280µs
-     * AVG   -> 1024 
+     * AVG   -> 1024
      */
-    ina229_reg_write(ADC_CONFIG, (0xA << 12)|(0x6 << 6)| 0x07);
-    
-    while(1) 
+    ina229_reg_write(ADC_CONFIG, (0xA << 12)|(0x4 << 6)| 0x07);
+
+    uint32_t vshunt_raw, current_raw;
+    int32_t vshunt, current;
+
+    while(1)
     {
         if(irq_flag)
         {
-            cdc_acm_printf("vshunt  = %X %X %X\r\n", vshunt[1], vshunt[2], vshunt[3]);
-            cdc_acm_printf("current = %X %X %X\r\n", current[1], current[2], current[3]);
+            vshunt_raw = ((vshunt_buff[1] << 16) | (vshunt_buff[2] << 8) | vshunt_buff[3]) & 0xFFFFFF;
+            current_raw = ((current_buff[1] << 16) | (current_buff[2] << 8) | current_buff[3]) & 0xFFFFFF;
+            vshunt = (vshunt_raw >> 4) & 0xFFFFF; // Extract bits [23:4]
+            current = (current_raw >> 4) & 0xFFFFF; // Extract bits [23:4]
+
+            // Convert the 20-bit two's complement value to a signed integer
+            if (vshunt & 0x80000) { // Check the sign bit (bit 19 in the 20-bit value)
+                vshunt |= 0xFFF00000; // If the sign bit is set, extend the sign to the 32-bit value
+            }
+
+            // Convert the 20-bit two's complement value to a signed integer
+            if (current & 0x80000) { // Check the sign bit (bit 19 in the 20-bit value)
+                current |= 0xFFF00000; // If the sign bit is set, extend the sign to the 32-bit value
+            }
+
+            //cdc_acm_printf("vshunt[mV]  = %f\r\n", vshunt*VSHUNT_LSB*1000);
+            cdc_acm_printf("current[mA] = %f\r\n", current*CURRENT_LSB*1000);
             irq_flag = 0;
         }
     }
