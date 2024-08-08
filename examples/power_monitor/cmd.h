@@ -50,12 +50,14 @@
  *  [0] 0x08      0x00       0x00        0x00         : Stop measuring
  *                                                    : No response
  * --------------------------------------------------------------------------------------------
- *  [0] 0x9       LEN_L      LEN_H       0x00         : Data streaming report (LEN = 2048 bytes)
- *  [1] V[0]      V[1]       V[2]        V[3]         : Voltage data [V] (first half is voltage)
- *  [2] V[0]      V[1]       V[2]        V[3]         :
+ *  [0] sign[0]   sign[1]    sign[2]     sign[3]      : Data streaming report (LEN = 2048 bytes)
+ *  [1] idl[0]    idl[1]     idl[2]      idl[3]       : ID low word
+ *  [2] idh[0]    idh[1]     idh[2]      idh[3]       : ID high word
+ *  [3] v[0]      v[1]       v[2]        v[3]         : Voltage data [V] (first half is voltage)
+ *  [4] v[0]      v[1]       v[2]        v[3]         :
  *  .........................................         :
- *  [n] I[0]      I[1]       I[2]        I[3]         : Current [mA] (second half is current)
- *  [m] I[0]      I[1]       I[2]        I[3]         :
+ *  [n] i[0]      i[1]       i[2]        i[3]         : Current [mA] (second half is current)
+ *  [m] i[0]      i[1]       i[2]        i[3]         :
  * --------------------------------------------------------------------------------------------
  *
  *************************************************************************************************/

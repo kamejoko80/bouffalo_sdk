@@ -12,8 +12,9 @@
 
 extern uint8_t *p_wr_buf;
 extern ina229_config_t ina229_config;
+extern ina229_lsb_param_t ina229_lsb;
 
-extern void cdc_acm_data_send(uint32_t len);
+extern void cdc_acm_cmd_response_send(void);
 
 bool check_ina229_config_param(cmd_t *p_cmd)
 {
@@ -64,13 +65,13 @@ void cmd_process(uint8_t *cmd_buff, uint32_t len)
         case CMD_NOP:
             printf("CMD nop\r\n");
             resp->result = 1;
-            cdc_acm_data_send(sizeof(response_t));
+            cdc_acm_cmd_response_send();
             break;
         case CMD_RESET_INA229:
             printf("CMD reset ina229\r\n");
             ina229_reset();
             resp->result = 1;
-            cdc_acm_data_send(sizeof(response_t));
+            cdc_acm_cmd_response_send();
             break;
         case CMD_WRITE_CONFIG_PARAM:
             printf("CMD write ina229 config params\r\n");
@@ -90,7 +91,7 @@ void cmd_process(uint8_t *cmd_buff, uint32_t len)
             {
                 resp->result = 0;
             }
-            cdc_acm_data_send(sizeof(response_t));
+            cdc_acm_cmd_response_send();
             break;
         case CMD_READ_CONFIG_PARAM:
             printf("CMD read ina229 config params\r\n");
@@ -98,19 +99,31 @@ void cmd_process(uint8_t *cmd_buff, uint32_t len)
             resp->config = ina229_config;
             resp->hw_config.vcc = ADC_VCC;
             resp->hw_config.rshunt = RSHUNT;
-            cdc_acm_data_send(sizeof(response_t));
+            cdc_acm_cmd_response_send();
             break;
         case CMD_CONFIGURE_INA229:
             printf("CMD configure the ina229\r\n");
+            if(ina229_config.adc_range == ADC_RANGE_0)
+            {
+                ina229_lsb.current_lsb = CURRENT_LSB_0;
+                ina229_lsb.vshunt_lsb  = VSHUNT_LSB_0;
+                ina229_lsb.vbus_lsb    = VBUS_LSB_0;
+            }
+            else
+            {
+                ina229_lsb.current_lsb = CURRENT_LSB_1;
+                ina229_lsb.vshunt_lsb  = VSHUNT_LSB_1;
+                ina229_lsb.vbus_lsb    = VBUS_LSB_1;
+            }
             ina229_param_config(&ina229_config);
             resp->result = 1;
-            cdc_acm_data_send(sizeof(response_t));
+            cdc_acm_cmd_response_send();
             break;
         case CMD_SET_BAT_SIM_VOLT:
             printf("CMD set battery simulator voltage output\r\n");
             bat_sim_fast_mode_write((uint16_t)((p_cmd->param_1 <<8) | p_cmd->param_2));
             resp->result = 1;
-            cdc_acm_data_send(sizeof(response_t));
+            cdc_acm_cmd_response_send();
             break;
         case CMD_BAT_SIM_OUTPUT:
             if(p_cmd->param_1 == 0x01)
@@ -129,24 +142,24 @@ void cmd_process(uint8_t *cmd_buff, uint32_t len)
             {
                 printf("CMD set bat sim voltage output is invalid\r\n");
             }
-            cdc_acm_data_send(sizeof(response_t));
+            cdc_acm_cmd_response_send();
             break;
         case CMD_START_MEASURE:
             printf("CMD start measuring\r\n");
-            ina229_start_measure(&ina229_config);
+            ina229_start_measure();
             resp->result = 1;
-            cdc_acm_data_send(sizeof(response_t));
+            cdc_acm_cmd_response_send();
             break;
         case CMD_STOP_MEASURE:
             printf("CMD stop measuring\r\n");
-            ina229_stop_measure(&ina229_config);
+            ina229_stop_measure();
             resp->result = 1;
-            cdc_acm_data_send(sizeof(response_t));
+            cdc_acm_cmd_response_send();
             break;
         default:
             printf("Unknown cmd type\r\n");
             resp->result = 0;
-            cdc_acm_data_send(sizeof(response_t));
+            cdc_acm_cmd_response_send();
             break;
     }
 }

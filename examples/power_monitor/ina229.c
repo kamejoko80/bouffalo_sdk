@@ -9,6 +9,9 @@
 
 #define MAX_REG_VALUE_SIZE (40/8 + 1)
 
+extern uint8_t *p_data_rpt_buf;
+extern void cdc_acm_data_rpt_send(void);
+
 static struct bflb_device_s *spi0;
 static struct bflb_device_s *gpio;
 
@@ -23,9 +26,17 @@ ina229_config_t ina229_config = {
     .avg_alert = AVG_ALERT_YES
 };
 
+ina229_lsb_param_t ina229_lsb = {
+    .current_lsb = CURRENT_LSB_0,
+    .vshunt_lsb  = VSHUNT_LSB_0,
+    .vbus_lsb    = VBUS_LSB_0
+};
+
 static volatile uint8_t irq_flag = 0;
 static uint8_t vbus_buff[4];
 static uint8_t current_buff[4];
+static volatile uint64_t g_id = 0;
+static uint32_t g_sample_cnt = 0;
 
 static void gpio0_isr(uint8_t pin)
 {
@@ -34,6 +45,7 @@ static void gpio0_isr(uint8_t pin)
         ina229_reg_read(DIAG_ALRT, diag_alrt, 3);
         ina229_reg_read(VBUS, vbus_buff, 4);
         ina229_reg_read(CURRENT, current_buff, 4);
+        g_id++;
         irq_flag = 1;
     }
 }
@@ -139,14 +151,27 @@ void ina229_reset(void)
     bflb_mtimer_delay_ms(10);
 }
 
-void ina229_start_measure(ina229_config_t *config)
+void ina229_start_measure(void)
 {
-    ina229_reg_write(ADC_CONFIG, (0xB << 12) | (config->cnv_time << 9) | (config->cnv_time << 6) | config->avg_num);
+    uint8_t adc_cfg[3];
+    uint16_t adc_cfg_value;
+
+    /* Reset data report id */
+    g_id = 0;
+    g_sample_cnt = 0;
+
+    ina229_reg_read(ADC_CONFIG, adc_cfg, 3);
+    adc_cfg_value = (uint16_t)((adc_cfg[1] << 8) | (adc_cfg[2]));
+    ina229_reg_write(ADC_CONFIG, (0xB << 12) | adc_cfg_value);
 }
 
-void ina229_stop_measure(ina229_config_t *config)
+void ina229_stop_measure(void)
 {
-    ina229_reg_write(ADC_CONFIG, (config->cnv_time << 9) | (config->cnv_time << 6) | config->avg_num);
+    uint8_t adc_cfg[3];
+    uint16_t adc_cfg_value;
+    ina229_reg_read(ADC_CONFIG, adc_cfg, 3);
+    adc_cfg_value = (uint16_t)((adc_cfg[1] << 8) | (adc_cfg[2]));
+    ina229_reg_write(ADC_CONFIG, adc_cfg_value & 0xFFF);
 }
 
 /*
@@ -192,6 +217,14 @@ void ina229_param_config(ina229_config_t *config)
     ina229_reg_read(DEVICE_ID, device_id, 3);
     printf("Manufacturer ID = %x%x\r\n", man_id[1], man_id[2]);
     printf("Device ID       = %x%x\r\n", device_id[1], device_id[2]);
+
+    printf("Conversion time config : %X\r\n", config->cnv_time);
+    printf("Average num config     : %X\r\n", config->avg_num);
+    printf("ADC range config       : %X\r\n", config->adc_range);
+    printf("Alert on AVG config    : %X\r\n", config->avg_alert);
+    printf("Current LSB            : %f\r\n", ina229_lsb.current_lsb);
+    printf("Vshunt LSB             : %f\r\n", ina229_lsb.vshunt_lsb);
+    printf("Vbus LSB               : %f\r\n", ina229_lsb.vbus_lsb);
 
     /*
      * Reset the ina229
@@ -274,6 +307,8 @@ void ina229_init(void)
     uint32_t vbus_raw, current_raw;
     int32_t vbus, current;
 
+    ina229_data_report_t *p_data_rpt = (ina229_data_report_t *)p_data_rpt_buf;
+
     while(1)
     {
         if(irq_flag)
@@ -293,14 +328,7 @@ void ina229_init(void)
                 current |= 0xFFF00000; // If the sign bit is set, extend the sign to the 32-bit value
             }
 
-            if(ina229_config.adc_range == ADC_RANGE_0)
-            {
-                printf("Vbus[V] = %f\t current[mA] = %f\r\n", vbus*VBUS_LSB_0, current*CURRENT_LSB_0*1000);
-            }
-            else
-            {
-                printf("Vbus[V] = %f\t current[mA] = %f\r\n", vbus*VBUS_LSB_1, current*CURRENT_LSB_1*1000);
-            }
+            printf("Vbus[V] = %f\t current[mA] = %f\r\n", vbus*ina229_lsb.vbus_lsb, current*ina229_lsb.current_lsb*1000);
 
             irq_flag = 0;
         }

@@ -72,6 +72,9 @@
 #define VSHUNT_LSB_1  (0.000000078125)
 #define VBUS_LSB_1    (0.0001953125)
 
+/* Data report sample number */
+#define DATA_RPT_SAMPLE_SIZE (1024/4)
+
 typedef enum {
     CONV_TIME_280uS  = 0x3,
     CONV_TIME_540uS  = 0x4,
@@ -113,13 +116,26 @@ typedef struct {
     float rshunt; /* Rhunt value [Ω] */
 } ina229_hw_param_t;
 
+typedef struct {
+    float current_lsb;
+    float vshunt_lsb;
+    float vbus_lsb;
+} ina229_lsb_param_t;
+
+typedef struct {
+   uint32_t sign;
+   uint64_t id;
+   int32_t voltage[DATA_RPT_SAMPLE_SIZE]; /* Voltage [V] */
+   int32_t current[DATA_RPT_SAMPLE_SIZE]; /* Current [mA] */
+} ina229_data_report_t;
+
 void ina229_reset(void);
 void ina229_init(void);
 void ina229_interface_bus_init(void);
 void ina229_enable_alert_interrupt(void);
 void ina229_disable_alert_interrupt(void);
 void ina229_param_config(ina229_config_t *config);
-void ina229_start_measure(ina229_config_t *config);
-void ina229_stop_measure(ina229_config_t *config);
+void ina229_start_measure(void);
+void ina229_stop_measure(void);
 
 #endif /* _INA229_H_ */

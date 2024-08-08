@@ -6,6 +6,7 @@
 #include "usbd_core.h"
 #include "usbd_cdc.h"
 #include "cmd.h"
+#include "ina229.h"
 
 /*!< endpoint address */
 #define CDC_IN_EP  0x81
@@ -105,13 +106,16 @@ static const uint8_t cdc_descriptor[] = {
     0x00
 };
 
-#define WR_BUFF_SIZE (2048 + 4)
-#define RD_BUFF_SIZE (256)
+#define WR_BUFF_SIZE       (sizeof(response_t))
+#define DATA_RPT_BUFF_SIZE (sizeof(ina229_data_report_t))
+#define RD_BUFF_SIZE       (256)
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[RD_BUFF_SIZE];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[WR_BUFF_SIZE];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t data_rpt_buffer[DATA_RPT_BUFF_SIZE];
 
 volatile uint8_t *p_wr_buf = &write_buffer[0];
+volatile uint8_t *p_data_rpt_buf = &data_rpt_buffer[0];
 volatile bool ep_tx_busy_flag = false;
 
 #ifdef CONFIG_USB_HS
@@ -223,9 +227,14 @@ void cdc_acm_data_send_with_dtr_test(void)
     }
 }
 
-void cdc_acm_data_send(uint32_t len)
+void cdc_acm_cmd_response_send(void)
 {
-    usbd_ep_start_write(CDC_IN_EP, write_buffer, len);
+    usbd_ep_start_write(CDC_IN_EP, write_buffer, WR_BUFF_SIZE);
+}
+
+void cdc_acm_data_rpt_send(void)
+{
+    usbd_ep_start_write(CDC_IN_EP, data_rpt_buffer, DATA_RPT_BUFF_SIZE);    
 }
 
 void cdc_acm_prints(char *str)
