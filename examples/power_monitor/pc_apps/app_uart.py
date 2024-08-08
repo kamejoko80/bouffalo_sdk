@@ -27,8 +27,17 @@ class UARTApp:
         self.baudrate_entry.insert(0, "2000000")  # Default baud rate set to 2000000
         self.baudrate_entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
 
-        self.connect_button = tk.Button(root, text="Connect", command=self.connect)
-        self.connect_button.grid(row=2, column=0, columnspan=2, pady=10)
+        # Frame for connect/disconnect buttons
+        self.button_frame = tk.Frame(root)
+        self.button_frame.grid(row=2, column=0, columnspan=2, pady=10, sticky="ew")
+        self.button_frame.grid_columnconfigure(0, weight=1)
+        self.button_frame.grid_columnconfigure(1, weight=1)
+
+        self.connect_button = tk.Button(self.button_frame, text="Connect", command=self.connect)
+        self.connect_button.grid(row=0, column=0, padx=(10, 5), sticky="ew")
+
+        self.disconnect_button = tk.Button(self.button_frame, text="Disconnect", command=self.disconnect)
+        self.disconnect_button.grid(row=0, column=1, padx=(5, 10), sticky="ew")
 
         # Data input/output
         self.input_label = tk.Label(root, text="Input (Hex):")
@@ -74,6 +83,16 @@ class UARTApp:
             self.receive_thread.start()
         except Exception as e:
             messagebox.showerror("Connection Error", str(e))
+
+    def disconnect(self):
+        self.is_receiving = False
+        if self.receive_thread:
+            self.receive_thread.join()
+        if self.serial_port and self.serial_port.is_open:
+            self.serial_port.close()
+            messagebox.showinfo("Disconnection", "Disconnected from the UART port")
+        else:
+            messagebox.showerror("Error", "No UART port is currently connected")
 
     def send_data(self):
         if not self.serial_port or not self.serial_port.is_open:

@@ -35,18 +35,55 @@ ina229_lsb_param_t ina229_lsb = {
 static volatile uint8_t irq_flag = 0;
 static uint8_t vbus_buff[4];
 static uint8_t current_buff[4];
-static volatile uint64_t g_id = 0;
+static uint8_t diag_alrt[3];
+
+static volatile uint32_t g_id = 0;
 static uint32_t g_sample_idx = 0;
 
 static void gpio0_isr(uint8_t pin)
 {
-    uint8_t diag_alrt[3];
+    uint32_t vbus_raw, current_raw;
+    int32_t vbus, current;
+
+    ina229_data_report_t *p_data_rpt = (ina229_data_report_t *)p_data_rpt_buf;
+
     if (pin == GPIO_PIN_0) {
         ina229_reg_read(DIAG_ALRT, diag_alrt, 3);
         ina229_reg_read(VBUS, vbus_buff, 4);
         ina229_reg_read(CURRENT, current_buff, 4);
-        g_id++;
-        irq_flag = 1;
+
+        vbus_raw = ((vbus_buff[1] << 16) | (vbus_buff[2] << 8) | vbus_buff[3]) & 0xFFFFFF;
+        current_raw = ((current_buff[1] << 16) | (current_buff[2] << 8) | current_buff[3]) & 0xFFFFFF;
+        vbus = (vbus_raw >> 4) & 0xFFFFF; // Extract bits [23:4]
+        current = (current_raw >> 4) & 0xFFFFF; // Extract bits [23:4]
+
+        // Convert the 20-bit two's complement value to a signed integer
+        if (vbus & 0x80000) { // Check the sign bit (bit 19 in the 20-bit value)
+            vbus |= 0xFFF00000; // If the sign bit is set, extend the sign to the 32-bit value
+        }
+
+        // Convert the 20-bit two's complement value to a signed integer
+        if (current & 0x80000) { // Check the sign bit (bit 19 in the 20-bit value)
+            current |= 0xFFF00000; // If the sign bit is set, extend the sign to the 32-bit value
+        }
+
+        p_data_rpt->voltage[g_sample_idx] = vbus*ina229_lsb.vbus_lsb;
+        p_data_rpt->current[g_sample_idx] = current*ina229_lsb.current_lsb*1000;
+
+        // printf("Vbus[V] = %f\t current[mA] = %f\r\n",  p_data_rpt->voltage[g_sample_idx], p_data_rpt->current[g_sample_idx]);
+
+        if(g_sample_idx >= DATA_RPT_SAMPLE_SIZE)
+        {
+            p_data_rpt->sign = 0x87654321;
+            p_data_rpt->id = g_id;
+            g_id += 1;
+            g_sample_idx = 0;
+            irq_flag = 1; /* flag to send out the report data */
+        }
+        else
+        {
+            g_sample_idx += 1;
+        }
     }
 }
 
@@ -317,47 +354,13 @@ void ina229_init(void)
 
     ina229_param_config(&ina229_config);
 
-    uint32_t vbus_raw, current_raw;
-    int32_t vbus, current;
-
-    ina229_data_report_t *p_data_rpt = (ina229_data_report_t *)p_data_rpt_buf;
-    p_data_rpt->sign = 0x12345678;
-
     while(1)
     {
         if(irq_flag)
         {
-            vbus_raw = ((vbus_buff[1] << 16) | (vbus_buff[2] << 8) | vbus_buff[3]) & 0xFFFFFF;
-            current_raw = ((current_buff[1] << 16) | (current_buff[2] << 8) | current_buff[3]) & 0xFFFFFF;
-            vbus = (vbus_raw >> 4) & 0xFFFFF; // Extract bits [23:4]
-            current = (current_raw >> 4) & 0xFFFFF; // Extract bits [23:4]
-
-            // Convert the 20-bit two's complement value to a signed integer
-            if (vbus & 0x80000) { // Check the sign bit (bit 19 in the 20-bit value)
-                vbus |= 0xFFF00000; // If the sign bit is set, extend the sign to the 32-bit value
-            }
-
-            // Convert the 20-bit two's complement value to a signed integer
-            if (current & 0x80000) { // Check the sign bit (bit 19 in the 20-bit value)
-                current |= 0xFFF00000; // If the sign bit is set, extend the sign to the 32-bit value
-            }
-
-            //printf("Vbus[V] = %f\t current[mA] = %f\r\n", vbus*ina229_lsb.vbus_lsb, current*ina229_lsb.current_lsb*1000);
-
-            p_data_rpt->voltage[g_sample_idx] = vbus*ina229_lsb.vbus_lsb;
-            p_data_rpt->current[g_sample_idx] = current*ina229_lsb.current_lsb*1000;
-            p_data_rpt->id = g_id;
-
-            if(g_sample_idx >= DATA_RPT_SAMPLE_SIZE)
-            {
-                g_sample_idx = 0;
-                cdc_acm_data_rpt_send();
-            }
-            else
-            {
-                g_sample_idx += 1;
-            }
-
+            //printf("g_id[D] = %d\r\n", g_id);
+            //printf("g_id[H] = %x\r\n", g_id);
+            cdc_acm_data_rpt_send();
             irq_flag = 0;
         }
     }

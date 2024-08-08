@@ -124,7 +124,7 @@ typedef struct {
 
 typedef struct {
    uint32_t sign;
-   uint64_t id;
+   uint32_t id;
    int32_t voltage[DATA_RPT_SAMPLE_SIZE]; /* Voltage [V] */
    int32_t current[DATA_RPT_SAMPLE_SIZE]; /* Current [mA] */
 } ina229_data_report_t;

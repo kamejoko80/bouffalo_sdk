@@ -51,10 +51,9 @@
  *                                                    : No response
  * --------------------------------------------------------------------------------------------
  *  [0] sign[0]   sign[1]    sign[2]     sign[3]      : Data streaming report (LEN = 2048 bytes)
- *  [1] idl[0]    idl[1]     idl[2]      idl[3]       : ID low word
- *  [2] idh[0]    idh[1]     idh[2]      idh[3]       : ID high word
- *  [3] v[0]      v[1]       v[2]        v[3]         : Voltage data [V] (first half is voltage)
- *  [4] v[0]      v[1]       v[2]        v[3]         :
+ *  [1] id[0]     id[1]      id[2]       id[3]        : ID low word
+ *  [2] v[0]      v[1]       v[2]        v[3]         : Voltage data [V] (first half is voltage)
+ *  [3] v[0]      v[1]       v[2]        v[3]         :
  *  .........................................         :
  *  [n] i[0]      i[1]       i[2]        i[3]         : Current [mA] (second half is current)
  *  [m] i[0]      i[1]       i[2]        i[3]         :
