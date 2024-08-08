@@ -103,18 +103,6 @@ void cmd_process(uint8_t *cmd_buff, uint32_t len)
             break;
         case CMD_CONFIGURE_INA229:
             printf("CMD configure the ina229\r\n");
-            if(ina229_config.adc_range == ADC_RANGE_0)
-            {
-                ina229_lsb.current_lsb = CURRENT_LSB_0;
-                ina229_lsb.vshunt_lsb  = VSHUNT_LSB_0;
-                ina229_lsb.vbus_lsb    = VBUS_LSB_0;
-            }
-            else
-            {
-                ina229_lsb.current_lsb = CURRENT_LSB_1;
-                ina229_lsb.vshunt_lsb  = VSHUNT_LSB_1;
-                ina229_lsb.vbus_lsb    = VBUS_LSB_1;
-            }
             ina229_param_config(&ina229_config);
             resp->result = 1;
             cdc_acm_cmd_response_send();

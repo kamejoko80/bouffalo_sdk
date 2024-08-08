@@ -218,6 +218,19 @@ void ina229_param_config(ina229_config_t *config)
     printf("Manufacturer ID = %x%x\r\n", man_id[1], man_id[2]);
     printf("Device ID       = %x%x\r\n", device_id[1], device_id[2]);
 
+    if(config->adc_range == ADC_RANGE_0)
+    {
+        ina229_lsb.current_lsb = CURRENT_LSB_0;
+        ina229_lsb.vshunt_lsb  = VSHUNT_LSB_0;
+        ina229_lsb.vbus_lsb    = VBUS_LSB_0;
+    }
+    else
+    {
+        ina229_lsb.current_lsb = CURRENT_LSB_1;
+        ina229_lsb.vshunt_lsb  = VSHUNT_LSB_1;
+        ina229_lsb.vbus_lsb    = VBUS_LSB_1;
+    }
+
     printf("Conversion time config : %X\r\n", config->cnv_time);
     printf("Average num config     : %X\r\n", config->avg_num);
     printf("ADC range config       : %X\r\n", config->adc_range);
