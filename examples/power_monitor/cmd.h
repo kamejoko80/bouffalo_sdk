@@ -2,55 +2,60 @@
 #define _CMD_H_
 
 #include "board.h"
+#include "ina229.h"
 
 /*************************************************************************************************
  *                 COMMUNICATION COMMAND DESCRIPTION
  *
  * Command format:
  *
- *      [B0]    [B1]       [B2]        [B3]
- *      [cmd]   [param 0]  [param 1]   [param 2]
+ *      [B0]     [B1]        [B2]        [B3]
+ *      [cmd]    [param 0]   [param 1]   [param 2]
  *
  * Command list:
  *
- * [idx][cmd]   [param 0]  [param 1]   [param 2]
+ * [idx][cmd]    [param 0]   [param 1]   [param 2]
  * --------------------------------------------------------------------------------------------
- *  [0] 0x00     0x00     0x00        0x00      : NOP
+ *  [0] 0x00      0x00       0x00        0x00         : NOP
  * --------------------------------------------------------------------------------------------
- *  [0] 0x01     0x00     0x00        0x00      : Reset INA229
- *  [0] 0x01     0x0/1    0x00        0x00      : Response
+ *  [0] 0x01      0x00       0x00        0x00         : Reset INA229
+ *  [0] 0x01      0x0/1      0x00        0x00         : Response
  * --------------------------------------------------------------------------------------------
- *  [0] 0x02     CT       AVG         0x00      : Set VBUSCT & VSHCT conversion time(CT), AVG count
- *  [0] 0x02     0x0/1    0x00        0x00      : Response
+ *  [0] 0x02      0x00       0x00        0x00         : Write INA229 config params
+ *  [1] cnv_time  avg_num    adc_range   avg_alert    : Config params
+ *  [0] 0x02      0x0/1      0x00        0x00         : Response
+ *  [1] cnv_time  avg_num    adc_range   avg_alert    : INA229 config param return
+ *  [2] vcc[0]    vcc[1]     vcc[2]      vcc[3]       : ADC VCC param return [V]
+ *  [3] rsh[0]    rsh[1]     rsh[2]      rsh[3]       : Rshunt param return [Ω]
  * --------------------------------------------------------------------------------------------
- *  [0] 0x03     ADCR     0x00        0x00      : Set ADCRANGE 0/1
- *  [0] 0x03     0x0/1    0x00        0x00      : Response
+ *  [0] 0x03      0x00       0x00        0x00         : Read INA229's config params
+ *  [0] 0x03      0x0/1      0x00        0x00         : Response result 0/1
+ *  [1] cnv_time  avg_num    adc_range   avg_alert    : INA229 config param return
+ *  [2] vcc[0]    vcc[1]     vcc[2]      vcc[3]       : ADC VCC param return [V]
+ *  [3] rsh[0]    rsh[1]     rsh[2]      rsh[3]       : Rshunt param return [Ω]
  * --------------------------------------------------------------------------------------------
- *  [0] 0x04     ACOMP    0x00        0x00      : Set ALERT comparison on the averaged value (ACOMP = 0/1)
- *  [0] 0x04     0x0/1    0x00        0x00      : Response
+ *  [0] 0x04      0x00       0x00        0x00         : Configure the INA229 with the above parameters
+ *  [0] 0x04      0x0/1      0x00        0x00         : Response
  * --------------------------------------------------------------------------------------------
- *  [0] 0x05     0x00     0x00        0x00      : Configure the INA229 with the above parameters
- *  [0] 0x05     0x0/1    0x00        0x00      : Response
+ *  [0] 0x05      VAL_L      VAL_H       0x00         : Set battery simulator volatge
+ *  [0] 0x05      0x0/1      0x00        0x00         : Response
  * --------------------------------------------------------------------------------------------
- *  [0] 0x06     VAL_H    VAL_L       0x00      : Set battery simulator volatge
- *  [0] 0x06     0x0/1    0x00        0x00      : Response
+ *  [0] 0x06      0x01       0x00        0x00         : Battery simulator volatge output enable
+ *  [0] 0x06      0x00       0x00        0x00         : Battery simulator volatge output disable
+ *  [0] 0x06      0x0/1      0x00        0x00         : Response
  * --------------------------------------------------------------------------------------------
- *  [0] 0x07     0x01     0x00        0x00      : Battery simulator volatge output enable
- *  [0] 0x07     0x00     0x00        0x00      : Battery simulator volatge output disable
- *  [0] 0x07     0x0/1    0x00        0x00      : Response
+ *  [0] 0x07      0x00       0x00        0x00         : Start measuring
+ *                                                    : No response
  * --------------------------------------------------------------------------------------------
- *  [0] 0x08     0x00     0x00        0x00      : Start measuring
- *                                              : No response
+ *  [0] 0x08      0x00       0x00        0x00         : Stop measuring
+ *                                                    : No response
  * --------------------------------------------------------------------------------------------
- *  [0] 0x09     0x00     0x00        0x00      : Stop measuring
- *                                              : No response
- * --------------------------------------------------------------------------------------------
- *  [0] 0x0A     LEN_H    LEN_L       0x00      : Data streaming report (LEN = 2048 bytes)
- *  [1] V[3]     V[2]     V[1]        V[0]      : Voltage data [V] (first half is voltage)
- *  [2] V[3]     V[2]     V[1]        V[0]      :
- *  .....................................       :
- *  [n] I[3]     I[2]     I[1]        I[0]      : Current [mA] (second half is current)
- *  [m] I[3]     I[2]     I[1]        I[0]      :
+ *  [0] 0x9       LEN_L      LEN_H       0x00         : Data streaming report (LEN = 2048 bytes)
+ *  [1] V[0]      V[1]       V[2]        V[3]         : Voltage data [V] (first half is voltage)
+ *  [2] V[0]      V[1]       V[2]        V[3]         :
+ *  .........................................         :
+ *  [n] I[0]      I[1]       I[2]        I[3]         : Current [mA] (second half is current)
+ *  [m] I[0]      I[1]       I[2]        I[3]         :
  * --------------------------------------------------------------------------------------------
  *
  *************************************************************************************************/
@@ -60,6 +65,7 @@ typedef struct {
     uint8_t param_1;
     uint8_t param_2;
     uint8_t param_3;
+    ina229_config_t config;
 } cmd_t;
 
 typedef struct {
@@ -67,19 +73,20 @@ typedef struct {
     uint8_t result;
     uint8_t reserve_1;
     uint8_t reserve_2;
+    ina229_config_t config;
+    ina229_hw_param_t hw_config;
 } response_t;
 
 typedef enum {
     CMD_NOP                = 0x00,
     CMD_RESET_INA229       = 0x01,
-    CMD_CONVERSION_TIME    = 0x02,
-    CMD_SET_ADCRANGE       = 0x03,
-    CMD_SET_ALERT_COMP_AVG = 0x04,
-    CMD_CONFIG_INA229      = 0x05,
-    CMD_SET_BAT_SIM_VOLT   = 0x06,
-    CMD_BAT_SIM_OUTPUT     = 0x07,
-    CMD_START_MESURE       = 0x08,
-    CMD_STOP_MESURE        = 0x09
+    CMD_WRITE_CONFIG_PARAM = 0x02,
+    CMD_READ_CONFIG_PARAM  = 0x03,
+    CMD_CONFIGURE_INA229   = 0x04,
+    CMD_SET_BAT_SIM_VOLT   = 0x05,
+    CMD_BAT_SIM_OUTPUT     = 0x06,
+    CMD_START_MEASURE      = 0x07,
+    CMD_STOP_MEASURE       = 0x08
 } cmd_code_t;
 
 void cmd_process(uint8_t *cmd_buff, uint32_t len);

@@ -4,6 +4,7 @@
 #include "board.h"
 #include "tca9534.h"
 #include "bat_sim.h"
+#include "ina229.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -52,6 +53,7 @@ void bat_sim_fast_mode_write(uint16_t data)
     /* we limit the output voltage at 4.2 volts */
     if(data >= DATA_MAX_4P2)
     {
+        printf("Output voltage should not exceed 4.2V\r\n");
         value = DATA_MAX_4P2;
     }
     else
@@ -68,7 +70,7 @@ void bat_sim_fast_mode_write(uint16_t data)
     msgs[0].buffer = p_tx;
     msgs[0].length = 2;
 
-    printf("Set voltage output: %f\r\n", (value * VCC)/4096);
+    printf("Set voltage output: %f\r\n", (value * ADC_VCC)/4096);
 
     bflb_i2c_transfer(i2c0, msgs, 1);
 }

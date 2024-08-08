@@ -59,28 +59,36 @@
  *
  */
 
+#define ADC_VCC (4.75)
+#define RSHUNT  (0.05)
+
 /* LSB in case ADCRANGE = 0 */
-#define CURRENT_LSB_0 0.00000625
-#define VSHUNT_LSB_0  0.0000003125
-#define VBUS_LSB_0    0.0001953125
+#define CURRENT_LSB_0 (0.00000625)
+#define VSHUNT_LSB_0  (0.0000003125)
+#define VBUS_LSB_0    (0.0001953125)
+
+/* LSB in case ADCRANGE = 1 */
+#define CURRENT_LSB_1 (0.0000015625)
+#define VSHUNT_LSB_1  (0.000000078125)
+#define VBUS_LSB_1    (0.0001953125)
 
 typedef enum {
     CONV_TIME_280uS  = 0x3,
     CONV_TIME_540uS  = 0x4,
     CONV_TIME_1052uS = 0x5,
-    CONV_TIME_2074uS = 0x6,    
-    CONV_TIME_4120uS = 0x7    
+    CONV_TIME_2074uS = 0x6,
+    CONV_TIME_4120uS = 0x7
 } ina229_conv_time_t;
 
 typedef enum {
     AVG_NUM_1    = 0x00,
     AVG_NUM_4    = 0x01,
     AVG_NUM_16   = 0x02,
-    AVG_NUM_64   = 0x03,  
+    AVG_NUM_64   = 0x03,
     AVG_NUM_128  = 0x04,
-    AVG_NUM_256  = 0x05,   
+    AVG_NUM_256  = 0x05,
     AVG_NUM_512  = 0x06,
-    AVG_NUM_1024 = 0x07 
+    AVG_NUM_1024 = 0x07
 } ina229_avg_num_t;
 
 typedef enum {
@@ -90,7 +98,7 @@ typedef enum {
 
 typedef enum {
     AVG_ALERT_NO  = 0x00,
-    AVG_ALERT_YES = 0x01 
+    AVG_ALERT_YES = 0x01
 } ina229_avg_alert_t;
 
 typedef struct {
@@ -99,6 +107,11 @@ typedef struct {
     uint8_t adc_range;
     uint8_t avg_alert;
 } ina229_config_t;
+
+typedef struct {
+    float vcc;    /* ADC VCC voltage [volts] */
+    float rshunt; /* Rhunt value [Ω] */
+} ina229_hw_param_t;
 
 void ina229_reset(void);
 void ina229_init(void);
