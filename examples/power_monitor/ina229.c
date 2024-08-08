@@ -36,7 +36,7 @@ static volatile uint8_t irq_flag = 0;
 static uint8_t vbus_buff[4];
 static uint8_t current_buff[4];
 static volatile uint64_t g_id = 0;
-static uint32_t g_sample_cnt = 0;
+static uint32_t g_sample_idx = 0;
 
 static void gpio0_isr(uint8_t pin)
 {
@@ -158,7 +158,7 @@ void ina229_start_measure(void)
 
     /* Reset data report id */
     g_id = 0;
-    g_sample_cnt = 0;
+    g_sample_idx = 0;
 
     ina229_reg_read(ADC_CONFIG, adc_cfg, 3);
     adc_cfg_value = (uint16_t)((adc_cfg[1] << 8) | (adc_cfg[2]));
@@ -321,6 +321,7 @@ void ina229_init(void)
     int32_t vbus, current;
 
     ina229_data_report_t *p_data_rpt = (ina229_data_report_t *)p_data_rpt_buf;
+    p_data_rpt->sign = 0x12345678;
 
     while(1)
     {
@@ -341,7 +342,21 @@ void ina229_init(void)
                 current |= 0xFFF00000; // If the sign bit is set, extend the sign to the 32-bit value
             }
 
-            printf("Vbus[V] = %f\t current[mA] = %f\r\n", vbus*ina229_lsb.vbus_lsb, current*ina229_lsb.current_lsb*1000);
+            //printf("Vbus[V] = %f\t current[mA] = %f\r\n", vbus*ina229_lsb.vbus_lsb, current*ina229_lsb.current_lsb*1000);
+
+            p_data_rpt->voltage[g_sample_idx] = vbus*ina229_lsb.vbus_lsb;
+            p_data_rpt->current[g_sample_idx] = current*ina229_lsb.current_lsb*1000;
+            p_data_rpt->id = g_id;
+
+            if(g_sample_idx >= DATA_RPT_SAMPLE_SIZE)
+            {
+                g_sample_idx = 0;
+                cdc_acm_data_rpt_send();
+            }
+            else
+            {
+                g_sample_idx += 1;
+            }
 
             irq_flag = 0;
         }
