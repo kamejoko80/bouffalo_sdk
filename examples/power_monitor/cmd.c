@@ -74,7 +74,7 @@ void cmd_process(uint8_t *cmd_buff, uint32_t len)
             break;
         case CMD_WRITE_CONFIG_PARAM:
             printf("CMD write ina229 config params\r\n");
-            if(len < sizeof(cmd_t))
+            if(len < 8)
             {
                 printf("Invalid command len\r\n");
             }
