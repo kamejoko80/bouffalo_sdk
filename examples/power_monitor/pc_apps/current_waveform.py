@@ -4,12 +4,16 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import threading
 import struct
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.widgets import SpanSelector
+from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 
 # Constants
 SIGNATURE = 0x87654321
 DATA_RPT_SAMPLE_SIZE = 256  # The size of the current and voltage arrays
+MAX_DATA_SIZE = 10000  # Maximum number of samples for zoom-out
 
 class UARTApp:
     def __init__(self, root):
@@ -21,6 +25,7 @@ class UARTApp:
         self.serial_port = None
         self.is_receiving = False
         self.receive_thread = None
+        self.current_data = np.array([])  # Store received current data here
 
         # UART Settings
         self.port_label = tk.Label(root, text="COM Port:")
@@ -88,6 +93,15 @@ class UARTApp:
         self.canvas = FigureCanvasTkAgg(self.figure, master=root)
         self.canvas.get_tk_widget().grid(row=9, column=0, columnspan=2, pady=10, sticky="nsew")
 
+        # SpanSelector for two cursors
+        self.span = SpanSelector(self.ax, self.on_select, 'horizontal', useblit=True, minspan=5)
+
+        # Text box to display average current
+        self.avg_current_label = tk.Label(root, text="Average Current (mA):")
+        self.avg_current_label.grid(row=10, column=0, padx=10, pady=10, sticky="w")
+        self.avg_current_entry = tk.Entry(root, state="readonly")
+        self.avg_current_entry.grid(row=10, column=1, padx=10, pady=10, sticky="ew")
+
     def connect(self):
         port = self.port_entry.get()
         baudrate = self.baudrate_entry.get()
@@ -135,12 +149,17 @@ class UARTApp:
 
                     # Check the signature
                     if sign == SIGNATURE:
-                        voltage_data = struct.unpack('<' + 'I' * DATA_RPT_SAMPLE_SIZE, data[8:8 + 4 * DATA_RPT_SAMPLE_SIZE])
-                        current_data = struct.unpack('<' + 'I' * DATA_RPT_SAMPLE_SIZE, data[8 + 4 * DATA_RPT_SAMPLE_SIZE:])
+                        voltage_data = struct.unpack('<' + 'i' * DATA_RPT_SAMPLE_SIZE, data[8:8 + 4 * DATA_RPT_SAMPLE_SIZE])
+                        current_data = struct.unpack('<' + 'i' * DATA_RPT_SAMPLE_SIZE, data[8 + 4 * DATA_RPT_SAMPLE_SIZE:])
+
+                        # Append to existing data for a smooth waveform
+                        self.current_data = np.append(self.current_data, current_data)
+                        if len(self.current_data) > 1024:  # Limit the size to 1024 samples for display
+                            self.current_data = self.current_data[-1024:]
 
                         # Update waveform
-                        self.update_waveform(current_data)
-                        
+                        self.update_waveform(self.current_data)
+
                         self.output_text.insert(tk.END, f"Package ID: {package_id}\n")
                         self.output_text.insert(tk.END, f"Current (mA): {current_data[:5]}...\n")  # Display first 5 values as a preview
                         self.output_text.see(tk.END)
@@ -151,11 +170,37 @@ class UARTApp:
 
     def update_waveform(self, current_data):
         self.ax.clear()
-        self.ax.plot(current_data)
+    
+        # Plot only the last MAX_DATA_SIZE samples if the data size exceeds it
+        if len(current_data) > MAX_DATA_SIZE:
+            self.ax.plot(current_data[-MAX_DATA_SIZE:])
+        else:
+            self.ax.plot(current_data)
+    
         self.ax.set_title("Current Waveform (mA)")
         self.ax.set_xlabel("Sample")
         self.ax.set_ylabel("Current (mA)")
         self.canvas.draw()
+
+        # Allow zooming
+        self.ax.set_xlim(left=max(0, len(current_data) - MAX_DATA_SIZE), right=len(current_data))
+
+    def on_zoom_reset(self):
+        # Adjust the view to the latest data
+        self.ax.set_xlim(left=max(0, len(self.current_data) - MAX_DATA_SIZE), right=len(self.current_data))
+        self.canvas.draw()
+
+    def on_select(self, xmin, xmax):
+        # Implement logic for handling analysis between cursors here
+        x_min, x_max = int(xmin), int(xmax)
+        selected_data = self.current_data[x_min:x_max]
+        avg_current = np.mean(selected_data)
+
+        # Update the average current in the text box
+        self.avg_current_entry.config(state=tk.NORMAL)
+        self.avg_current_entry.delete(0, tk.END)
+        self.avg_current_entry.insert(0, f"{avg_current:.2f}")
+        self.avg_current_entry.config(state="readonly")
 
     def clear_output(self):
         self.output_text.delete('1.0', tk.END)
