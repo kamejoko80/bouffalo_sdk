@@ -34,6 +34,11 @@ average_num = {
     "AVG_NUM_1024" : 0x07
 }
 
+adc_range = {
+    "RANGE_0"  : 0x00,
+    "RANGE_1"  : 0x01
+}
+
 class UARTApp:
     def __init__(self, root):
         self.root = root
@@ -74,27 +79,47 @@ class UARTApp:
         self.send_button = tk.Button(root, text="Send Cmd", command=self.send_data)
         self.send_button.grid(row=4, column=1, padx=(155, 10), sticky="w")
 
-
-        # Selected conversion time variable
+        # Create a conversion time drop-down list
+        self.conv_label = tk.Label(root, text="Conv Time:")
+        self.conv_label.grid(row=5, column=0, padx=(155, 5), sticky="w")
         self.selected_conversion_time = tk.StringVar()
         self.selected_conversion_time.set("280uS")  # Default value
-        
-        # Create a drop-down list
-        self.dropdown = tk.OptionMenu(root, self.selected_conversion_time, *conversion_times.keys())
-        self.dropdown.grid(row=5, column=0, padx=(155, 5), sticky="w")
+        self.dropdown_conv_time = tk.OptionMenu(root, self.selected_conversion_time, *conversion_times.keys())
+        self.dropdown_conv_time.grid(row=5, column=0, padx=(220, 5), sticky="w")
 
+        # Create a average num drop-down list
+        self.avg_num_label = tk.Label(root, text="Avg Num:")
+        self.avg_num_label.grid(row=5, column=0, padx=(310, 5), sticky="w")
+        self.selected_average_num = tk.StringVar()
+        self.selected_average_num.set("AVG_NUM_1")  # Default value
+        self.dropdown_avg_num = tk.OptionMenu(root, self.selected_average_num, *average_num.keys())
+        self.dropdown_avg_num.grid(row=5, column=0, padx=(370, 5), sticky="w")
+
+        # Create ADC range drop-down list
+        self.adc_range_label = tk.Label(root, text="ADC Range:")
+        self.adc_range_label.grid(row=5, column=0, padx=(495, 5), sticky="w")
+        self.selected_adc_range = tk.StringVar()
+        self.selected_adc_range.set("RANGE_0")  # Default value
+        self.dropdown_adc_range = tk.OptionMenu(root, self.selected_adc_range, *adc_range.keys())
+        self.dropdown_adc_range.grid(row=5, column=0, padx=(565, 5), sticky="w")
+
+        # Configure adc button
+        self.config_button = tk.Button(root, text="Config ADC", command=self.execute_adc_configuration)
+        self.config_button.grid(row=6, column=0, padx=(155, 10), sticky="w")
+
+        # Clear and Quit button
         self.clear_button = tk.Button(root, text="Clear Output", command=self.clear_output)
-        self.clear_button.grid(row=6, column=0, padx=(155, 10), sticky="w")
+        self.clear_button.grid(row=7, column=0, padx=(155, 10), sticky="w")
 
         self.quit_button = tk.Button(root, text="Quit", command=self.close)
-        self.quit_button.grid(row=7, column=0, padx=(155, 10), sticky="w")
+        self.quit_button.grid(row=8, column=0, padx=(155, 10), sticky="w")
 
         self.output_label = tk.Label(root, text="Output (Hex):")
-        self.output_label.grid(row=8, column=0, padx=10, pady=10, sticky="w")
+        self.output_label.grid(row=9, column=0, padx=10, pady=10, sticky="w")
 
         # Adding a scroll bar to the text output
         self.output_frame = tk.Frame(root)
-        self.output_frame.grid(row=9, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+        self.output_frame.grid(row=10, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
         self.output_text = tk.Text(self.output_frame, height=10, width=50, wrap=tk.NONE)
         self.output_scrollbar_y = tk.Scrollbar(self.output_frame, orient=tk.VERTICAL, command=self.output_text.yview)
         self.output_scrollbar_x = tk.Scrollbar(self.output_frame, orient=tk.HORIZONTAL, command=self.output_text.xview)
@@ -104,7 +129,7 @@ class UARTApp:
         self.output_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Configure grid layout for resizing
-        self.root.grid_rowconfigure(9, weight=1)
+        self.root.grid_rowconfigure(10, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
 
         # Matplotlib figure for plotting current waveform
@@ -114,16 +139,31 @@ class UARTApp:
         self.ax.set_xlabel("Sample")
         self.ax.set_ylabel("Current (mA)")
         self.canvas = FigureCanvasTkAgg(self.figure, master=root)
-        self.canvas.get_tk_widget().grid(row=10, column=0, columnspan=2, pady=10, sticky="nsew")
+        self.canvas.get_tk_widget().grid(row=11, column=0, columnspan=2, pady=10, sticky="nsew")
 
         # SpanSelector for two cursors
         self.span = SpanSelector(self.ax, self.on_select, 'horizontal', useblit=True, minspan=5)
 
         # Text box to display average current
         self.avg_current_label = tk.Label(root, text="Average Current (mA):")
-        self.avg_current_label.grid(row=11, column=0, padx=10, pady=10, sticky="w")
+        self.avg_current_label.grid(row=12, column=0, padx=10, pady=10, sticky="w")
         self.avg_current_entry = tk.Entry(root, state="readonly")
-        self.avg_current_entry.grid(row=11, column=1, padx=10, pady=10, sticky="ew")
+        self.avg_current_entry.grid(row=12, column=1, padx=10, pady=10, sticky="ew")
+
+    def execute_adc_configuration(self):
+        selected_conv_time = self.selected_conversion_time.get()
+        hex_value = conversion_times[selected_conv_time]
+        self.output_text.insert(tk.END, f"Selected Conversion Time: {selected_conv_time} (0x{hex_value:X})\n")
+
+        selected_avg_num = self.selected_average_num.get()
+        hex_value = average_num[selected_avg_num]
+        self.output_text.insert(tk.END, f"Selected Average Num: {selected_avg_num} (0x{hex_value:X})\n")
+
+        selected_adc_range = self.selected_adc_range.get()
+        hex_value = adc_range[selected_adc_range]
+        self.output_text.insert(tk.END, f"Selected Adc Range: {selected_adc_range} (0x{hex_value:X})\n")
+
+        self.output_text.see(tk.END)
 
     def connect(self):
         port = self.port_entry.get()
