@@ -18,7 +18,7 @@ MAX_DATA_SIZE = 10000  # Maximum number of samples for zoom-out
 class UARTApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("UART Data Viewer")
+        self.root.title("Power Logger")
         self.root.geometry("800x600")
         self.root.resizable(True, True)  # Allow the window to be maximized
 
@@ -46,11 +46,11 @@ class UARTApp:
         self.button_frame.grid_columnconfigure(0, weight=1)
         self.button_frame.grid_columnconfigure(1, weight=1)
 
-        self.connect_button = tk.Button(self.button_frame, text="Connect", command=self.connect)
-        self.connect_button.grid(row=0, column=0, padx=(10, 5), sticky="ew")
+        self.connect_button = tk.Button(self.button_frame, text="Connect", bg="blue", fg="white", command=self.connect)
+        self.connect_button.grid(row=0, column=0, padx=(155, 10), sticky="ew")
 
-        self.disconnect_button = tk.Button(self.button_frame, text="Disconnect", command=self.disconnect)
-        self.disconnect_button.grid(row=0, column=1, padx=(5, 10), sticky="ew")
+        self.disconnect_button = tk.Button(self.button_frame, text="Disconnect", bg="blue", fg="white", command=self.disconnect)
+        self.disconnect_button.grid(row=0, column=1, padx=(155, 10), sticky="ew")
 
         # Data input/output
         self.input_label = tk.Label(root, text="Input (Hex):")
@@ -108,7 +108,7 @@ class UARTApp:
         baudrate = self.baudrate_entry.get()
         try:
             self.serial_port = serial.Serial(port, baudrate=int(baudrate), timeout=1)
-            messagebox.showinfo("Connection", f"Connected to {port} at {baudrate} baud")
+            # messagebox.showinfo("Connection", f"Connected to {port} at {baudrate} baud")
             self.is_receiving = True
             self.receive_thread = threading.Thread(target=self.receive_data)
             self.receive_thread.start()
@@ -121,7 +121,7 @@ class UARTApp:
             self.receive_thread.join()
         if self.serial_port and self.serial_port.is_open:
             self.serial_port.close()
-            messagebox.showinfo("Disconnection", "Disconnected from the UART port")
+            # messagebox.showinfo("Disconnection", "Disconnected from the UART port")
         else:
             messagebox.showerror("Error", "No UART port is currently connected")
 
