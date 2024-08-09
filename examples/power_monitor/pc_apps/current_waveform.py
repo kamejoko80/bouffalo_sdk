@@ -15,6 +15,25 @@ SIGNATURE = 0x87654321
 DATA_RPT_SAMPLE_SIZE = 256  # The size of the current and voltage arrays
 MAX_DATA_SIZE = 10000  # Maximum number of samples for zoom-out
 
+conversion_times = {
+    "280uS": 0x3,
+    "540uS": 0x4,
+    "1052uS": 0x5,
+    "2074uS": 0x6,
+    "4120uS": 0x7
+}
+
+average_num = {
+    "AVG_NUM_1"    : 0x00,
+    "AVG_NUM_4"    : 0x01,
+    "AVG_NUM_16"   : 0x02,
+    "AVG_NUM_64"   : 0x03,
+    "AVG_NUM_128"  : 0x04,
+    "AVG_NUM_256"  : 0x05,
+    "AVG_NUM_512"  : 0x06,
+    "AVG_NUM_1024" : 0x07
+}
+
 class UARTApp:
     def __init__(self, root):
         self.root = root
@@ -55,18 +74,27 @@ class UARTApp:
         self.send_button = tk.Button(root, text="Send Cmd", command=self.send_data)
         self.send_button.grid(row=4, column=1, padx=(155, 10), sticky="w")
 
+
+        # Selected conversion time variable
+        self.selected_conversion_time = tk.StringVar()
+        self.selected_conversion_time.set("280uS")  # Default value
+        
+        # Create a drop-down list
+        self.dropdown = tk.OptionMenu(root, self.selected_conversion_time, *conversion_times.keys())
+        self.dropdown.grid(row=5, column=0, padx=(155, 5), sticky="w")
+
         self.clear_button = tk.Button(root, text="Clear Output", command=self.clear_output)
-        self.clear_button.grid(row=5, column=0, padx=(155, 10), sticky="w")
+        self.clear_button.grid(row=6, column=0, padx=(155, 10), sticky="w")
 
         self.quit_button = tk.Button(root, text="Quit", command=self.close)
-        self.quit_button.grid(row=6, column=0, padx=(155, 10), sticky="w")
+        self.quit_button.grid(row=7, column=0, padx=(155, 10), sticky="w")
 
         self.output_label = tk.Label(root, text="Output (Hex):")
-        self.output_label.grid(row=7, column=0, padx=10, pady=10, sticky="w")
+        self.output_label.grid(row=8, column=0, padx=10, pady=10, sticky="w")
 
         # Adding a scroll bar to the text output
         self.output_frame = tk.Frame(root)
-        self.output_frame.grid(row=8, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+        self.output_frame.grid(row=9, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
         self.output_text = tk.Text(self.output_frame, height=10, width=50, wrap=tk.NONE)
         self.output_scrollbar_y = tk.Scrollbar(self.output_frame, orient=tk.VERTICAL, command=self.output_text.yview)
         self.output_scrollbar_x = tk.Scrollbar(self.output_frame, orient=tk.HORIZONTAL, command=self.output_text.xview)
@@ -76,7 +104,7 @@ class UARTApp:
         self.output_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Configure grid layout for resizing
-        self.root.grid_rowconfigure(8, weight=1)
+        self.root.grid_rowconfigure(9, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
 
         # Matplotlib figure for plotting current waveform
@@ -86,16 +114,16 @@ class UARTApp:
         self.ax.set_xlabel("Sample")
         self.ax.set_ylabel("Current (mA)")
         self.canvas = FigureCanvasTkAgg(self.figure, master=root)
-        self.canvas.get_tk_widget().grid(row=9, column=0, columnspan=2, pady=10, sticky="nsew")
+        self.canvas.get_tk_widget().grid(row=10, column=0, columnspan=2, pady=10, sticky="nsew")
 
         # SpanSelector for two cursors
         self.span = SpanSelector(self.ax, self.on_select, 'horizontal', useblit=True, minspan=5)
 
         # Text box to display average current
         self.avg_current_label = tk.Label(root, text="Average Current (mA):")
-        self.avg_current_label.grid(row=10, column=0, padx=10, pady=10, sticky="w")
+        self.avg_current_label.grid(row=11, column=0, padx=10, pady=10, sticky="w")
         self.avg_current_entry = tk.Entry(root, state="readonly")
-        self.avg_current_entry.grid(row=10, column=1, padx=10, pady=10, sticky="ew")
+        self.avg_current_entry.grid(row=11, column=1, padx=10, pady=10, sticky="ew")
 
     def connect(self):
         port = self.port_entry.get()
@@ -115,7 +143,7 @@ class UARTApp:
             self.receive_thread.join()
         if self.serial_port and self.serial_port.is_open:
             self.serial_port.close()
-            # messagebox.showinfo("Disconnection", "Disconnected from the UART port")
+            messagebox.showinfo("Disconnection", "Disconnected from the UART port")
         else:
             messagebox.showerror("Error", "No UART port is currently connected")
 
@@ -155,9 +183,9 @@ class UARTApp:
                         # Update waveform
                         self.update_waveform(self.current_data)
 
-                        self.output_text.insert(tk.END, f"Package ID: {package_id}\n")
-                        self.output_text.insert(tk.END, f"Current (mA): {current_data[:5]}...\n")  # Display first 5 values as a preview
-                        self.output_text.see(tk.END)
+                        #self.output_text.insert(tk.END, f"Package ID: {package_id}\n")
+                        #self.output_text.insert(tk.END, f"Current (mA): {current_data[:5]}...\n")  # Display first 5 values as a preview
+                        #self.output_text.see(tk.END)
             except Exception as e:
                 self.is_receiving = False
                 messagebox.showerror("Error", str(e))
