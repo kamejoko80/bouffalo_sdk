@@ -40,32 +40,26 @@ class UARTApp:
         self.baudrate_entry.insert(0, "8000000")  # Default baud rate set to 2000000
         self.baudrate_entry.grid(row=0, column=1, padx=(230, 360), sticky="w")
 
-        # Frame for connect/disconnect buttons
-        self.button_frame = tk.Frame(root)
-        self.button_frame.grid(row=2, column=0, columnspan=2, pady=10, sticky="ew")
-        self.button_frame.grid_columnconfigure(0, weight=1)
-        self.button_frame.grid_columnconfigure(1, weight=1)
+        self.connect_button = tk.Button(root, text="Connect", bg="blue", fg="white", command=self.connect)
+        self.connect_button.grid(row=1, column=0, padx=(155, 20), sticky="w")
 
-        self.connect_button = tk.Button(self.button_frame, text="Connect", bg="blue", fg="white", command=self.connect)
-        self.connect_button.grid(row=0, column=0, padx=(155, 10), sticky="ew")
-
-        self.disconnect_button = tk.Button(self.button_frame, text="Disconnect", bg="blue", fg="white", command=self.disconnect)
-        self.disconnect_button.grid(row=0, column=1, padx=(155, 10), sticky="ew")
+        self.disconnect_button = tk.Button(root, text="Disconnect", bg="blue", fg="white", command=self.disconnect)
+        self.disconnect_button.grid(row=1, column=1, padx=(10, 20), sticky="w")
 
         # Data input/output
-        self.input_label = tk.Label(root, text="Input (Hex):")
-        self.input_label.grid(row=3, column=0, padx=10, pady=10, sticky="w")
+        self.input_label = tk.Label(root, text="Cmd (Hex):")
+        self.input_label.grid(row=4, column=0, padx=(155, 10), sticky="w")
         self.input_entry = tk.Entry(root)
-        self.input_entry.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
+        self.input_entry.grid(row=4, column=1, padx=(0, 10), sticky="w")
 
-        self.send_button = tk.Button(root, text="Send", command=self.send_data)
-        self.send_button.grid(row=4, column=0, columnspan=2, pady=10)
+        self.send_button = tk.Button(root, text="Send Cmd", command=self.send_data)
+        self.send_button.grid(row=4, column=1, padx=(155, 10), sticky="w")
 
         self.clear_button = tk.Button(root, text="Clear Output", command=self.clear_output)
-        self.clear_button.grid(row=5, column=0, columnspan=2, pady=10)
+        self.clear_button.grid(row=5, column=0, padx=(155, 10), sticky="w")
 
         self.quit_button = tk.Button(root, text="Quit", command=self.close)
-        self.quit_button.grid(row=6, column=0, columnspan=2, pady=10)
+        self.quit_button.grid(row=6, column=0, padx=(155, 10), sticky="w")
 
         self.output_label = tk.Label(root, text="Output (Hex):")
         self.output_label.grid(row=7, column=0, padx=10, pady=10, sticky="w")
