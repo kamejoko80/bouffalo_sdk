@@ -1,3 +1,4 @@
+import time
 import serial
 import binascii
 import tkinter as tk
@@ -151,17 +152,51 @@ class UARTApp:
         self.avg_current_entry.grid(row=12, column=1, padx=10, pady=10, sticky="ew")
 
     def execute_adc_configuration(self):
+        cmd = bytearray()
         selected_conv_time = self.selected_conversion_time.get()
         hex_value = conversion_times[selected_conv_time]
+        cmd.extend([0x02, 0x00, 0x00, 0x00]) # Command write config
+        cmd.append(hex_value) # added cnv_time
         self.output_text.insert(tk.END, f"Selected Conversion Time: {selected_conv_time} (0x{hex_value:X})\n")
 
         selected_avg_num = self.selected_average_num.get()
         hex_value = average_num[selected_avg_num]
+        cmd.append(hex_value) # added avg_num
         self.output_text.insert(tk.END, f"Selected Average Num: {selected_avg_num} (0x{hex_value:X})\n")
 
         selected_adc_range = self.selected_adc_range.get()
         hex_value = adc_range[selected_adc_range]
+        cmd.append(hex_value) # added adc_range
+        cmd.append(0x01)      # added avg_alert
         self.output_text.insert(tk.END, f"Selected Adc Range: {selected_adc_range} (0x{hex_value:X})\n")
+        self.output_text.insert(tk.END, f"Command: {cmd}\n")
+
+        if not self.serial_port or not self.serial_port.is_open:
+            messagebox.showerror("Error", "Please connect to a UART port first.")
+            return
+
+        hex_input = self.input_entry.get().strip()
+
+        try:
+            # Write adc config param command
+            self.serial_port.write(cmd)
+            response = self.serial_port.read(16)
+            self.output_text.insert(tk.END, f"Response: {response}\n")
+            if response[0] != cmd[0] or response[1] != 0x01:
+                messagebox.showerror("Error", "Device respone error")
+                return
+
+            # Run command configure INA229
+            cmd = bytearray([0x04, 0x00, 0x00, 0x00])
+            self.serial_port.write(cmd)
+            response = self.serial_port.read(16)
+            self.output_text.insert(tk.END, f"Response: {response}\n")
+            if response[0] != cmd[0] or response[1] != 0x01:
+                messagebox.showerror("Error", "Device respone error")
+                return
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
         self.output_text.see(tk.END)
 
