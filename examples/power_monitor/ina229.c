@@ -20,8 +20,8 @@ void ina229_reg_write(uint8_t addr, uint16_t value);
 
 /* Default ina229 configuration */
 ina229_config_t ina229_config = {
-    .cnv_time  = CONV_TIME_540uS,
-    .avg_num   = AVG_NUM_1024,
+    .cnv_time  = CONV_TIME_280uS,
+    .avg_num   = AVG_NUM_1,
     .adc_range = ADC_RANGE_0,
     .avg_alert = AVG_ALERT_YES
 };
