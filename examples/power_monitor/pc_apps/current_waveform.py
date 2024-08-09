@@ -108,6 +108,14 @@ class UARTApp:
         self.config_button = tk.Button(root, text="Config ADC", command=self.execute_adc_configuration)
         self.config_button.grid(row=6, column=0, padx=(155, 10), sticky="w")
 
+        # Start measuring button
+        self.start_mesuring_button = tk.Button(root, text="Start Mesuring", command=self.execute_start_measuring)
+        self.start_mesuring_button.grid(row=6, column=0, padx=(240, 10), sticky="w")
+
+        # Stop measuring button
+        self.stop_mesuring_button = tk.Button(root, text="Stop Mesuring", command=self.execute_stop_measuring)
+        self.stop_mesuring_button.grid(row=6, column=0, padx=(340, 10), sticky="w")
+
         # Clear and Quit button
         self.clear_button = tk.Button(root, text="Clear Output", command=self.clear_output)
         self.clear_button.grid(row=7, column=0, padx=(155, 10), sticky="w")
@@ -151,6 +159,50 @@ class UARTApp:
         self.avg_current_entry = tk.Entry(root, state="readonly")
         self.avg_current_entry.grid(row=12, column=1, padx=10, pady=10, sticky="ew")
 
+    def execute_stop_measuring(self):
+        cmd = bytearray()
+
+        if not self.serial_port or not self.serial_port.is_open:
+            messagebox.showerror("Error", "Please connect to a UART port first.")
+            return
+
+        try:
+            # Run command start measuring
+            cmd = bytearray([0x08, 0x00, 0x00, 0x00])
+            self.serial_port.write(cmd)
+            response = self.serial_port.read(16)
+            self.output_text.insert(tk.END, f"Response: {response}\n")
+            if response[0] != cmd[0] or response[1] != 0x01:
+                messagebox.showerror("Error", "Device respone error")
+                return
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+        self.output_text.see(tk.END)
+
+    def execute_start_measuring(self):
+        cmd = bytearray()
+
+        if not self.serial_port or not self.serial_port.is_open:
+            messagebox.showerror("Error", "Please connect to a UART port first.")
+            return
+
+        try:
+            # Run command start measuring
+            cmd = bytearray([0x07, 0x00, 0x00, 0x00])
+            self.serial_port.write(cmd)
+            response = self.serial_port.read(16)
+            self.output_text.insert(tk.END, f"Response: {response}\n")
+            if response[0] != cmd[0] or response[1] != 0x01:
+                messagebox.showerror("Error", "Device respone error")
+                return
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+        self.output_text.see(tk.END)
+
     def execute_adc_configuration(self):
         cmd = bytearray()
         selected_conv_time = self.selected_conversion_time.get()
@@ -174,8 +226,6 @@ class UARTApp:
         if not self.serial_port or not self.serial_port.is_open:
             messagebox.showerror("Error", "Please connect to a UART port first.")
             return
-
-        hex_input = self.input_entry.get().strip()
 
         try:
             # Write adc config param command
