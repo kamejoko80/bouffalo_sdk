@@ -31,12 +31,13 @@ class UARTApp:
         self.port_label = tk.Label(root, text="COM Port:")
         self.port_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
         self.port_entry = tk.Entry(root)
+        self.port_entry.insert(0, "COM22")
         self.port_entry.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
 
         self.baudrate_label = tk.Label(root, text="Baud Rate:")
         self.baudrate_label.grid(row=1, column=0, padx=10, pady=10, sticky="w")
         self.baudrate_entry = tk.Entry(root)
-        self.baudrate_entry.insert(0, "2000000")  # Default baud rate set to 2000000
+        self.baudrate_entry.insert(0, "8000000")  # Default baud rate set to 2000000
         self.baudrate_entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
 
         # Frame for connect/disconnect buttons
@@ -154,8 +155,8 @@ class UARTApp:
 
                         # Append to existing data for a smooth waveform
                         self.current_data = np.append(self.current_data, current_data)
-                        if len(self.current_data) > 1024:  # Limit the size to 1024 samples for display
-                            self.current_data = self.current_data[-1024:]
+                        if len(self.current_data) > MAX_DATA_SIZE:  # Limit the size to MAX_DATA_SIZE samples for display
+                            self.current_data = self.current_data[-MAX_DATA_SIZE:]
 
                         # Update waveform
                         self.update_waveform(self.current_data)
@@ -170,13 +171,13 @@ class UARTApp:
 
     def update_waveform(self, current_data):
         self.ax.clear()
-    
+
         # Plot only the last MAX_DATA_SIZE samples if the data size exceeds it
         if len(current_data) > MAX_DATA_SIZE:
             self.ax.plot(current_data[-MAX_DATA_SIZE:])
         else:
             self.ax.plot(current_data)
-    
+
         self.ax.set_title("Current Waveform (mA)")
         self.ax.set_xlabel("Sample")
         self.ax.set_ylabel("Current (mA)")
