@@ -14,7 +14,7 @@ from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 # Constants
 SIGNATURE = 0x87654321
 DATA_RPT_SAMPLE_SIZE = 256  # The size of the current and voltage arrays
-MAX_DATA_SIZE = 10000  # Maximum number of samples for zoom-out
+MAX_DATA_SIZE = 100000  # Maximum number of samples for zoom-out
 
 conversion_times = {
     "280uS": 0x3,
