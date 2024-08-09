@@ -19,7 +19,7 @@ class UARTApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Power Logger")
-        self.root.geometry("800x600")
+        self.root.geometry("1200x900")
         self.root.resizable(True, True)  # Allow the window to be maximized
 
         self.serial_port = None
@@ -29,16 +29,16 @@ class UARTApp:
 
         # UART Settings
         self.port_label = tk.Label(root, text="COM Port:")
-        self.port_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+        self.port_label.grid(row=0, column=0, padx=(155, 5), sticky="w")
         self.port_entry = tk.Entry(root)
         self.port_entry.insert(0, "COM22")
-        self.port_entry.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
+        self.port_entry.grid(row=0, column=1, padx=(0, 5), sticky="w")
 
         self.baudrate_label = tk.Label(root, text="Baud Rate:")
-        self.baudrate_label.grid(row=1, column=0, padx=10, pady=10, sticky="w")
+        self.baudrate_label.grid(row=0, column=1, padx=(160, 10), sticky="w")
         self.baudrate_entry = tk.Entry(root)
         self.baudrate_entry.insert(0, "8000000")  # Default baud rate set to 2000000
-        self.baudrate_entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
+        self.baudrate_entry.grid(row=0, column=1, padx=(230, 360), sticky="w")
 
         # Frame for connect/disconnect buttons
         self.button_frame = tk.Frame(root)
