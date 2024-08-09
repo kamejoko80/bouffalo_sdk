@@ -51,18 +51,19 @@ class UARTApp:
         self.is_receiving = False
         self.receive_thread = None
         self.current_data = np.array([])  # Store received current data here
+        self.voltage_data = np.array([])  # Store received voltage data here
 
         # UART Settings
         self.port_label = tk.Label(root, text="COM Port:")
         self.port_label.grid(row=0, column=0, padx=(155, 5), sticky="w")
         self.port_entry = tk.Entry(root)
-        self.port_entry.insert(0, "COM22")
+        self.port_entry.insert(0, "COM5")
         self.port_entry.grid(row=0, column=1, padx=(0, 5), sticky="w")
 
         self.baudrate_label = tk.Label(root, text="Baud Rate:")
         self.baudrate_label.grid(row=0, column=1, padx=(160, 10), sticky="w")
         self.baudrate_entry = tk.Entry(root)
-        self.baudrate_entry.insert(0, "8000000")  # Default baud rate set to 2000000
+        self.baudrate_entry.insert(0, "10000000")  # Default baud rate set to 2000000
         self.baudrate_entry.grid(row=0, column=1, padx=(230, 360), sticky="w")
 
         self.connect_button = tk.Button(root, text="Connect", bg="blue", fg="white", command=self.connect)
@@ -138,26 +139,34 @@ class UARTApp:
         self.output_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Configure grid layout for resizing
-        self.root.grid_rowconfigure(10, weight=1)
+        self.root.grid_rowconfigure(2, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
 
-        # Matplotlib figure for plotting current waveform
-        self.figure = plt.Figure(figsize=(5, 4), dpi=100)
-        self.ax = self.figure.add_subplot(111)
-        self.ax.set_title("Current Waveform (mA)")
-        self.ax.set_xlabel("Sample")
-        self.ax.set_ylabel("Current (mA)")
-        self.canvas = FigureCanvasTkAgg(self.figure, master=root)
-        self.canvas.get_tk_widget().grid(row=11, column=0, columnspan=2, pady=10, sticky="nsew")
+        # Matplotlib figure for plotting volatge waveform
+        self.figure2 = plt.Figure(figsize=(5, 2), dpi=80)
+        self.ax2 = self.figure2.add_subplot(111)
+        self.ax2.set_title("Volatge Waveform (V)")
+        self.ax2.set_xlabel("Sample")
+        self.ax2.set_ylabel("Volatage (V)")
+        self.canvas2 = FigureCanvasTkAgg(self.figure2, master=root)
+        self.canvas2.get_tk_widget().grid(row=11, column=0, columnspan=2, pady=10, sticky="nsew")
 
+        # Matplotlib figure for plotting current waveform
+        self.figure1 = plt.Figure(figsize=(5, 3), dpi=80)
+        self.ax1 = self.figure1.add_subplot(111)
+        self.ax1.set_title("Current Waveform (mA)")
+        self.ax1.set_xlabel("Sample")
+        self.ax1.set_ylabel("Current (mA)")
+        self.canvas1 = FigureCanvasTkAgg(self.figure1, master=root)
+        self.canvas1.get_tk_widget().grid(row=12, column=0, columnspan=2, pady=10, sticky="nsew")
         # SpanSelector for two cursors
-        self.span = SpanSelector(self.ax, self.on_select, 'horizontal', useblit=True, minspan=5)
+        self.span = SpanSelector(self.ax1, self.on_select, 'horizontal', useblit=True, minspan=5)
 
         # Text box to display average current
         self.avg_current_label = tk.Label(root, text="Average Current (mA):")
-        self.avg_current_label.grid(row=12, column=0, padx=10, pady=10, sticky="w")
+        self.avg_current_label.grid(row=13, column=0, padx=10, pady=10, sticky="w")
         self.avg_current_entry = tk.Entry(root, state="readonly")
-        self.avg_current_entry.grid(row=12, column=1, padx=10, pady=10, sticky="ew")
+        self.avg_current_entry.grid(row=13, column=1, padx=10, pady=10, sticky="ew")
 
     def execute_stop_measuring(self):
         cmd = bytearray()
@@ -305,8 +314,16 @@ class UARTApp:
                         if len(self.current_data) > MAX_DATA_SIZE:  # Limit the size to MAX_DATA_SIZE samples for display
                             self.current_data = self.current_data[-MAX_DATA_SIZE:]
 
-                        # Update waveform
-                        self.update_waveform(self.current_data)
+                        # Append to existing data for a smooth waveform
+                        self.voltage_data = np.append(self.voltage_data, voltage_data)
+                        if len(self.voltage_data) > MAX_DATA_SIZE:  # Limit the size to MAX_DATA_SIZE samples for display
+                            self.voltage_data = self.voltage_data[-MAX_DATA_SIZE:]
+
+                        # Update current waveform
+                        self.update_current_waveform(self.current_data)
+
+                        # Update volatge waveform
+                        self.update_volatge_waveform(self.voltage_data)
 
                         #self.output_text.insert(tk.END, f"Package ID: {package_id}\n")
                         #self.output_text.insert(tk.END, f"Current (mA): {current_data[:5]}...\n")  # Display first 5 values as a preview
@@ -316,27 +333,44 @@ class UARTApp:
                 messagebox.showerror("Error", str(e))
                 break
 
-    def update_waveform(self, current_data):
-        self.ax.clear()
+    def update_current_waveform(self, current_data):
+        self.ax1.clear()
 
         # Plot only the last MAX_DATA_SIZE samples if the data size exceeds it
         if len(current_data) > MAX_DATA_SIZE:
-            self.ax.plot(current_data[-MAX_DATA_SIZE:])
+            self.ax1.plot(current_data[-MAX_DATA_SIZE:])
         else:
-            self.ax.plot(current_data)
+            self.ax1.plot(current_data)
 
-        self.ax.set_title("Current Waveform (mA)")
-        self.ax.set_xlabel("Sample")
-        self.ax.set_ylabel("Current (mA)")
-        self.canvas.draw()
+        self.ax1.set_title("Current Waveform (mA)")
+        self.ax1.set_xlabel("Sample")
+        self.ax1.set_ylabel("Current (mA)")
+        self.canvas1.draw()
 
         # Allow zooming
-        self.ax.set_xlim(left=max(0, len(current_data) - MAX_DATA_SIZE), right=len(current_data))
+        self.ax1.set_xlim(left=max(0, len(current_data) - MAX_DATA_SIZE), right=len(current_data))
+
+    def update_volatge_waveform(self, voltage_data):
+        self.ax2.clear()
+
+        # Plot only the last MAX_DATA_SIZE samples if the data size exceeds it
+        if len(voltage_data) > MAX_DATA_SIZE:
+            self.ax2.plot(voltage_data[-MAX_DATA_SIZE:])
+        else:
+            self.ax2.plot(voltage_data)
+
+        self.ax1.set_title("Volatge Waveform (V)")
+        self.ax1.set_xlabel("Sample")
+        self.ax1.set_ylabel("Voltage (mA)")
+        self.canvas2.draw()
+
+        # Allow zooming
+        self.ax2.set_xlim(left=max(0, len(voltage_data) - MAX_DATA_SIZE), right=len(voltage_data))
 
     def on_zoom_reset(self):
         # Adjust the view to the latest data
-        self.ax.set_xlim(left=max(0, len(self.current_data) - MAX_DATA_SIZE), right=len(self.current_data))
-        self.canvas.draw()
+        self.ax1.set_xlim(left=max(0, len(self.current_data) - MAX_DATA_SIZE), right=len(self.current_data))
+        self.canvas1.draw()
 
     def on_select(self, xmin, xmax):
         # Implement logic for handling analysis between cursors here
