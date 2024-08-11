@@ -260,9 +260,9 @@ class UARTApp:
             return
 
         # Check if the click is close to a marker
-        if abs(event.xdata - self.marker1_pos) < 10:
+        if abs(event.xdata - self.marker1_pos) < 20:
             self.dragging_marker = 'marker1'
-        elif abs(event.xdata - self.marker2_pos) < 10:
+        elif abs(event.xdata - self.marker2_pos) < 20:
             self.dragging_marker = 'marker2'
 
     def on_release(self, event):
