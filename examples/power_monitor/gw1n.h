@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2024 Hery Dang (henrydang@mijoconnected.com)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef _GW1N_H_
 #define _GW1N_H_
 

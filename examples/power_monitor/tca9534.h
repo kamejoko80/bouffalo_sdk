@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2024 Hery Dang (henrydang@mijoconnected.com)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+ 
 #ifndef _TCA9534_H_
 #define _TCA9534_H_
 

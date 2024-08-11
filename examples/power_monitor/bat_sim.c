@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2024 Hery Dang (henrydang@mijoconnected.com)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "bflb_gpio.h"
 #include "bflb_i2c.h"
 #include "bflb_mtimer.h"
