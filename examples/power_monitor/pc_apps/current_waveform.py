@@ -159,14 +159,86 @@ class UARTApp:
         self.ax1.set_ylabel("Current (mA)")
         self.canvas1 = FigureCanvasTkAgg(self.figure1, master=root)
         self.canvas1.get_tk_widget().grid(row=12, column=0, columnspan=2, pady=10, sticky="nsew")
-        # SpanSelector for two cursors
-        self.span = SpanSelector(self.ax1, self.on_select, 'horizontal', useblit=True, minspan=5)
+        # Initialize marker positions
+        self.marker1_pos = 200
+        self.marker2_pos = 400
+        # Add default markers
+        self.marker_line1 = self.ax1.axvline(self.marker1_pos, color='red', linestyle='--')
+        self.marker_line2 = self.ax1.axvline(self.marker2_pos, color='blue', linestyle='--')
+        # Initialize dragging_marker
+        self.dragging_marker = None
+        # Connect event handlers for dragging markers
+        self.canvas1.mpl_connect('button_press_event', self.on_press)
+        self.canvas1.mpl_connect('button_release_event', self.on_release)
+        self.canvas1.mpl_connect('motion_notify_event', self.on_motion)
+        # Update the waveform and markers
+        self.update_current_waveform(self.current_data)
 
-        # Text box to display average current
+        # Initialize avg_current_entry here
         self.avg_current_label = tk.Label(root, text="Average Current (mA):")
         self.avg_current_label.grid(row=13, column=0, padx=10, pady=10, sticky="w")
         self.avg_current_entry = tk.Entry(root, state="readonly")
         self.avg_current_entry.grid(row=13, column=1, padx=10, pady=10, sticky="ew")
+
+    def on_press(self, event):
+        if event.inaxes != self.ax1:
+            return
+
+        # Check if the click is close to a marker
+        if abs(event.xdata - self.marker1_pos) < 10:
+            self.dragging_marker = 'marker1'
+        elif abs(event.xdata - self.marker2_pos) < 10:
+            self.dragging_marker = 'marker2'
+
+    def on_release(self, event):
+        self.dragging_marker = None
+
+    def on_motion(self, event):
+        if not hasattr(self, 'dragging_marker'):
+            return
+
+        if event.inaxes != self.ax1:
+            return
+
+        # Update marker position based on mouse movement
+        if self.dragging_marker == 'marker1':
+            self.marker1_pos = min(max(event.xdata, 0), self.marker2_pos)
+            self.marker_line1.set_xdata([self.marker1_pos, self.marker1_pos])
+        elif self.dragging_marker == 'marker2':
+            self.marker2_pos = max(min(event.xdata, len(self.current_data)), self.marker1_pos)
+            self.marker_line2.set_xdata([self.marker2_pos, self.marker2_pos])
+
+        # Recalculate the average current and update the display
+        self.calculate_and_update_average()
+
+        # Redraw the canvas
+        self.canvas1.draw()
+
+    def calculate_and_update_average(self):
+        if not hasattr(self, 'avg_current_entry'):
+            return  # Exit if avg_current_entry is not available
+
+        x_min, x_max = int(self.marker1_pos), int(self.marker2_pos)
+
+        if x_min < 0:
+            x_min = 0
+        if x_max > len(self.current_data):
+            x_max = len(self.current_data)
+
+        selected_data = self.current_data[x_min:x_max]
+
+        # Remove invalid values
+        selected_data = selected_data[np.isfinite(selected_data)]
+
+        if len(selected_data) > 0:
+            avg_current = np.mean(selected_data)
+        else:
+            avg_current = 0  # Or another appropriate value
+
+        self.avg_current_entry.config(state=tk.NORMAL)
+        self.avg_current_entry.delete(0, tk.END)
+        self.avg_current_entry.insert(0, f"{avg_current:.2f}")
+        self.avg_current_entry.config(state="readonly")
 
     def execute_stop_measuring(self):
         cmd = bytearray()
@@ -189,6 +261,9 @@ class UARTApp:
             messagebox.showerror("Error", str(e))
 
         self.output_text.see(tk.END)
+
+        # Update the display to show markers even without current data
+        self.update_current_waveform(self.current_data)
 
     def execute_start_measuring(self):
         cmd = bytearray()
@@ -334,6 +409,7 @@ class UARTApp:
                 break
 
     def update_current_waveform(self, current_data):
+        # Clear the axis without removing the markers
         self.ax1.clear()
 
         # Plot only the last MAX_DATA_SIZE samples if the data size exceeds it
@@ -342,13 +418,20 @@ class UARTApp:
         else:
             self.ax1.plot(current_data)
 
+        # Re-add the markers after plotting the waveform
+        self.marker_line1 = self.ax1.axvline(self.marker1_pos, color='red', linestyle='--')
+        self.marker_line2 = self.ax1.axvline(self.marker2_pos, color='blue', linestyle='--')
+
+        # Set axis labels and title
         self.ax1.set_title("Current Waveform (mA)")
         self.ax1.set_xlabel("Sample")
         self.ax1.set_ylabel("Current (mA)")
-        self.canvas1.draw()
 
-        # Allow zooming
-        self.ax1.set_xlim(left=max(0, len(current_data) - MAX_DATA_SIZE), right=len(current_data))
+        # Update average current display
+        self.calculate_and_update_average()
+
+        # Redraw the canvas
+        self.canvas1.draw()
 
     def update_volatge_waveform(self, voltage_data):
         self.ax2.clear()
@@ -364,25 +447,10 @@ class UARTApp:
         self.ax1.set_ylabel("Voltage (mA)")
         self.canvas2.draw()
 
-        # Allow zooming
-        self.ax2.set_xlim(left=max(0, len(voltage_data) - MAX_DATA_SIZE), right=len(voltage_data))
-
     def on_zoom_reset(self):
         # Adjust the view to the latest data
         self.ax1.set_xlim(left=max(0, len(self.current_data) - MAX_DATA_SIZE), right=len(self.current_data))
         self.canvas1.draw()
-
-    def on_select(self, xmin, xmax):
-        # Implement logic for handling analysis between cursors here
-        x_min, x_max = int(xmin), int(xmax)
-        selected_data = self.current_data[x_min:x_max]
-        avg_current = np.mean(selected_data)
-
-        # Update the average current in the text box
-        self.avg_current_entry.config(state=tk.NORMAL)
-        self.avg_current_entry.delete(0, tk.END)
-        self.avg_current_entry.insert(0, f"{avg_current:.2f}")
-        self.avg_current_entry.config(state="readonly")
 
     def clear_output(self):
         self.output_text.delete('1.0', tk.END)
