@@ -1,3 +1,31 @@
+#######################################################################################################
+# FreeBSD License
+# Copyright (c) [2024], Henry Dang (henrydang@mijoconnected.com)
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of
+#    conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of
+#    conditions and the following disclaimer in the documentation and/or other materials
+#    provided with the distribution.
+# 3. Neither the name of Henry Dang nor the names of its contributors
+#    may be used to endorse or promote products derived from this software without specific
+#    prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+# OF THE POSSIBILITY OF SUCH DAMAGE.
+#######################################################################################################
+
 import time
 import serial
 import binascii
@@ -7,9 +35,7 @@ import threading
 import struct
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.widgets import SpanSelector
-from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 # Constants
 SIGNATURE = 0x87654321
@@ -46,6 +72,11 @@ class UARTApp:
         self.root.title("Power Logger")
         self.root.geometry("1200x900")
         self.root.resizable(True, True)  # Allow the window to be maximized
+
+        # Initialize the stack to keep track of xlim history
+        self.xlim_stack = []
+        # Initialize other properties
+        self.original_xlim = None
 
         self.serial_port = None
         self.is_receiving = False
@@ -171,6 +202,7 @@ class UARTApp:
         self.canvas1.mpl_connect('button_press_event', self.on_press)
         self.canvas1.mpl_connect('button_release_event', self.on_release)
         self.canvas1.mpl_connect('motion_notify_event', self.on_motion)
+        self.canvas1.mpl_connect('scroll_event', self.on_scroll)
         # Update the waveform and markers
         self.update_current_waveform(self.current_data)
 
@@ -191,6 +223,37 @@ class UARTApp:
         self.marker2_label.grid(row=15, column=0, padx=(155, 10), sticky="w")
         self.marker2_text = tk.Entry(root)
         self.marker2_text.grid(row=15, column=1, padx=(0, 10), sticky="w")
+
+    def on_scroll(self, event):
+        if event.inaxes != self.ax1:
+            return
+
+        zoom_factor = 1.1
+        if event.button == 'up':
+            zoom_factor = 1 / zoom_factor
+            self.xlim_stack.append(self.ax1.get_xlim())
+        elif event.button == 'down':
+            if self.xlim_stack:
+                prev_xlim = self.xlim_stack.pop()
+                self.ax1.set_xlim(prev_xlim)
+            else:
+                self.ax1.set_xlim(self.original_xlim)
+
+        x_center = (self.marker1_pos + self.marker2_pos) / 2
+        x_range = self.ax1.get_xlim()[1] - self.ax1.get_xlim()[0]
+        new_x_range = x_range * zoom_factor
+
+        if event.button == 'up':
+            self.ax1.set_xlim([x_center - new_x_range / 2, x_center + new_x_range / 2])
+        elif event.button == 'down':
+            new_xlim = [x_center - new_x_range / 2, x_center + new_x_range / 2]
+            # Ensure limits do not exceed original limits on zoom out
+            self.ax1.set_xlim([
+                max(new_xlim[0], self.original_xlim[0]),
+                min(new_xlim[1], self.original_xlim[1])
+            ])
+
+        self.canvas1.draw()
 
     def on_press(self, event):
         if event.inaxes != self.ax1:
@@ -266,9 +329,17 @@ class UARTApp:
 
         # Update text boxes
         self.marker1_text.delete(0, tk.END)
-        self.marker1_text.insert(0, f"{marker1_value:.2f}")
         self.marker2_text.delete(0, tk.END)
-        self.marker2_text.insert(0, f"{marker2_value:.2f}")
+
+        # Helper function to format values
+        def format_value(value):
+            try:
+                return f"{float(value):.2f}"  # Convert to float and format
+            except ValueError:
+                return str(value)  # Return the value as is if it can't be converted
+
+        self.marker1_text.insert(0, format_value(marker1_value))
+        self.marker2_text.insert(0, format_value(marker2_value))
 
     def execute_stop_measuring(self):
         cmd = bytearray()
@@ -445,8 +516,10 @@ class UARTApp:
         # Plot only the last MAX_DATA_SIZE samples if the data size exceeds it
         if len(current_data) > MAX_DATA_SIZE:
             self.ax1.plot(current_data[-MAX_DATA_SIZE:])
+            self.original_xlim = [0, MAX_DATA_SIZE]
         else:
             self.ax1.plot(current_data)
+            self.original_xlim = [0, len(current_data)]
 
         # Re-add the markers after plotting the waveform
         self.marker_line1 = self.ax1.axvline(self.marker1_pos, color='red', linestyle='--')
@@ -460,7 +533,21 @@ class UARTApp:
         # Update average current display
         self.calculate_and_update_average()
 
-        # Redraw the canvas
+        # Check and set initial x-limits
+        current_xlim = self.ax1.get_xlim()
+        if current_xlim[0] == current_xlim[1]:  # Check if x-limits are identical
+            # Increase the range slightly to avoid identical limits
+            delta = 1
+            new_xlim = [current_xlim[0] - delta, current_xlim[1] + delta]
+        else:
+            new_xlim = self.original_xlim
+
+        # Ensure new_xlim is valid and has distinct bounds
+        if new_xlim[0] == new_xlim[1]:
+            new_xlim[0] -= 1
+            new_xlim[1] += 1
+
+        self.ax1.set_xlim(new_xlim)
         self.canvas1.draw()
 
     def update_volatge_waveform(self, voltage_data):
@@ -476,11 +563,6 @@ class UARTApp:
         self.ax1.set_xlabel("Sample")
         self.ax1.set_ylabel("Voltage (mA)")
         self.canvas2.draw()
-
-    def on_zoom_reset(self):
-        # Adjust the view to the latest data
-        self.ax1.set_xlim(left=max(0, len(self.current_data) - MAX_DATA_SIZE), right=len(self.current_data))
-        self.canvas1.draw()
 
     def clear_output(self):
         self.output_text.delete('1.0', tk.END)
