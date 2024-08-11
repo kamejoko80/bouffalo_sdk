@@ -180,6 +180,18 @@ class UARTApp:
         self.avg_current_entry = tk.Entry(root, state="readonly")
         self.avg_current_entry.grid(row=13, column=1, padx=10, pady=10, sticky="ew")
 
+        # Marker 1 current value
+        self.marker1_label = tk.Label(root, text="Marker 1 Value:")
+        self.marker1_label.grid(row=14, column=0, padx=(155, 10), sticky="w")
+        self.marker1_text = tk.Entry(root)
+        self.marker1_text.grid(row=14, column=1, padx=(0, 10), sticky="w")
+
+        # Marker 2 current value
+        self.marker2_label = tk.Label(root, text="Marker 2 Value:")
+        self.marker2_label.grid(row=15, column=0, padx=(155, 10), sticky="w")
+        self.marker2_text = tk.Entry(root)
+        self.marker2_text.grid(row=15, column=1, padx=(0, 10), sticky="w")
+
     def on_press(self, event):
         if event.inaxes != self.ax1:
             return
@@ -207,6 +219,9 @@ class UARTApp:
         elif self.dragging_marker == 'marker2':
             self.marker2_pos = max(min(event.xdata, len(self.current_data)), self.marker1_pos)
             self.marker_line2.set_xdata([self.marker2_pos, self.marker2_pos])
+
+        # Update marker values in text boxes based on current data
+        self.update_marker_values()
 
         # Recalculate the average current and update the display
         self.calculate_and_update_average()
@@ -239,6 +254,21 @@ class UARTApp:
         self.avg_current_entry.delete(0, tk.END)
         self.avg_current_entry.insert(0, f"{avg_current:.2f}")
         self.avg_current_entry.config(state="readonly")
+
+    def update_marker_values(self):
+        # Ensure marker positions are within the bounds of current_data
+        marker1_index = int(self.marker1_pos)
+        marker2_index = int(self.marker2_pos)
+
+        # Get the current values at marker positions
+        marker1_value = self.current_data[marker1_index] if 0 <= marker1_index < len(self.current_data) else 'N/A'
+        marker2_value = self.current_data[marker2_index] if 0 <= marker2_index < len(self.current_data) else 'N/A'
+
+        # Update text boxes
+        self.marker1_text.delete(0, tk.END)
+        self.marker1_text.insert(0, f"{marker1_value:.2f}")
+        self.marker2_text.delete(0, tk.END)
+        self.marker2_text.insert(0, f"{marker2_value:.2f}")
 
     def execute_stop_measuring(self):
         cmd = bytearray()
