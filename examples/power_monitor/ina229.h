@@ -79,7 +79,11 @@
 #define VBUS_LSB_1    (0.0001953125)
 
 /* Data report sample number */
-#define DATA_RPT_SAMPLE_SIZE (1024/4)
+/*
+ * sizeof(ina229_data_report_t) should be <=512 to ensure data
+ * streaming won't be corrupt when the PC host is high work load
+ */
+#define DATA_RPT_SAMPLE_SIZE 63
 
 typedef enum {
     CONV_TIME_280uS  = 0x3,

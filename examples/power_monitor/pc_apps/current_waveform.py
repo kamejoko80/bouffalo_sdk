@@ -39,8 +39,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 
 # Constants
 SIGNATURE = 0x87654321
-DATA_RPT_SAMPLE_SIZE = 256  # The size of the current and voltage arrays
-MAX_DATA_SIZE = 100000  # Maximum number of samples for zoom-out
+DATA_RPT_SAMPLE_SIZE = 63  # The size of the current and voltage arrays
+MAX_DATA_SIZE = 100000     # Maximum number of samples for zoom-out
 
 conversion_times = {
     "280uS": 0x3,
@@ -369,9 +369,10 @@ class UARTApp:
             self.serial_port.write(cmd)
             response = self.serial_port.read(16)
             self.output_text.insert(tk.END, f"Response: {response}\n")
-            if response[0] != cmd[0] or response[1] != 0x01:
-                messagebox.showerror("Error", "Device respone error")
-                return
+            # We don't expect response OK after stop measure command
+            # if response[0] != cmd[0] or response[1] != 0x01:
+                # messagebox.showerror("Error", "Device respone error")
+                # return
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
