@@ -80,6 +80,7 @@ class UARTApp:
 
         self.serial_port = None
         self.is_receiving = False
+        self.is_measuring = False
         self.receive_thread = None
         self.current_data = np.array([])  # Store received current data here
         self.voltage_data = np.array([])  # Store received voltage data here
@@ -88,7 +89,7 @@ class UARTApp:
         self.port_label = tk.Label(root, text="COM Port:")
         self.port_label.grid(row=0, column=0, padx=(155, 5), sticky="w")
         self.port_entry = tk.Entry(root)
-        self.port_entry.insert(0, "COM5")
+        self.port_entry.insert(0, "COM22")
         self.port_entry.grid(row=0, column=1, padx=(0, 5), sticky="w")
 
         self.baudrate_label = tk.Label(root, text="Baud Rate:")
@@ -225,6 +226,9 @@ class UARTApp:
         self.marker2_text.grid(row=15, column=1, padx=(0, 10), sticky="w")
 
     def on_scroll(self, event):
+        if self.is_measuring == True:
+            return
+
         if event.inaxes != self.ax1:
             return
 
@@ -256,19 +260,30 @@ class UARTApp:
         self.canvas1.draw()
 
     def on_press(self, event):
+        if self.is_measuring == True:
+            return
+
         if event.inaxes != self.ax1:
             return
 
         # Check if the click is close to a marker
-        if abs(event.xdata - self.marker1_pos) < 20:
+        x_center = (self.marker1_pos + self.marker2_pos) / 2
+
+        if(event.xdata <= self.marker1_pos) and (abs(event.xdata - self.marker1_pos) < x_center):
             self.dragging_marker = 'marker1'
-        elif abs(event.xdata - self.marker2_pos) < 20:
+        elif (event.xdata >= self.marker2_pos) and (abs(event.xdata - self.marker2_pos) < x_center):
             self.dragging_marker = 'marker2'
 
     def on_release(self, event):
+        if self.is_measuring == True:
+            return
+
         self.dragging_marker = None
 
     def on_motion(self, event):
+        if self.is_measuring == True:
+            return
+
         if not hasattr(self, 'dragging_marker'):
             return
 
@@ -364,6 +379,7 @@ class UARTApp:
         self.output_text.see(tk.END)
 
         # Update the display to show markers even without current data
+        self.is_measuring = False
         self.update_current_waveform(self.current_data)
 
     def execute_start_measuring(self):
@@ -386,6 +402,7 @@ class UARTApp:
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
+        self.is_measuring = True
         self.output_text.see(tk.END)
 
     def execute_adc_configuration(self):
