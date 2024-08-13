@@ -283,7 +283,7 @@
             <property name="orient">vertical</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="height">95</property>
+              <property name="height">760</property>
               <property name="x">5</property>
               <property name="y">0</property>
             </layout>
@@ -327,7 +327,7 @@
             <property name="orient">vertical</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="height">95</property>
+              <property name="height">760</property>
               <property name="x">1275</property>
               <property name="y">0</property>
             </layout>
@@ -335,7 +335,7 @@
         </child>
         <child>
           <object class="tk.Canvas" id="canvas_voltage" named="True">
-            <property name="background">#000000</property>
+            <property name="background">#6c9159</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">150</property>
@@ -354,6 +354,42 @@
               <property name="width">150</property>
               <property name="x">980</property>
               <property name="y">50</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="tk.Canvas" id="canvas_current" named="True">
+            <property name="background">#6c9159</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">300</property>
+              <property name="width">1260</property>
+              <property name="x">10</property>
+              <property name="y">265</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="tk.Text" id="text1">
+            <property name="height">10</property>
+            <property name="width">50</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">180</property>
+              <property name="width">750</property>
+              <property name="x">10</property>
+              <property name="y">575</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Separator" id="separator9">
+            <property name="orient">horizontal</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="width">1270</property>
+              <property name="x">5</property>
+              <property name="y">760</property>
             </layout>
           </object>
         </child>
