@@ -123,7 +123,7 @@
         </child>
         <child>
           <object class="ttk.Entry" id="entry_cmd" named="True">
-            <property name="justify">right</property>
+            <property name="justify">left</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">30</property>
@@ -146,6 +146,7 @@
         </child>
         <child>
           <object class="ttk.OptionMenu" id="optionmenu_convtime" named="True">
+            <property name="value">280uS</property>
             <property name="values">280uS, 540uS</property>
             <layout manager="place">
               <property name="anchor">nw</property>
@@ -169,6 +170,7 @@
         </child>
         <child>
           <object class="ttk.OptionMenu" id="optionmenu_avgnum" named="True">
+            <property name="value">AVG_NUM_512</property>
             <property name="values">AVG_NUM_512, AVG_NUM_1024</property>
             <layout manager="place">
               <property name="anchor">nw</property>
@@ -181,6 +183,7 @@
         </child>
         <child>
           <object class="ttk.OptionMenu" id="optionmenu_adc_range" named="True">
+            <property name="value">RANGE_0</property>
             <property name="values">RANGE_0, RANGE_1</property>
             <layout manager="place">
               <property name="anchor">nw</property>
@@ -250,6 +253,83 @@
               <property name="width">200</property>
               <property name="x">820</property>
               <property name="y">52</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Separator" id="separator1">
+            <property name="orient">horizontal</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="width">1050</property>
+              <property name="x">5</property>
+              <property name="y">0</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Separator" id="separator2">
+            <property name="orient">horizontal</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="width">1050</property>
+              <property name="x">5</property>
+              <property name="y">95</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Separator" id="separator3">
+            <property name="orient">vertical</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">95</property>
+              <property name="x">5</property>
+              <property name="y">0</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Separator" id="separator4">
+            <property name="orient">vertical</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">95</property>
+              <property name="x">325</property>
+              <property name="y">0</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Separator" id="separator6">
+            <property name="orient">vertical</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">95</property>
+              <property name="x">485</property>
+              <property name="y">0</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Separator" id="separator7">
+            <property name="orient">vertical</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">95</property>
+              <property name="x">815</property>
+              <property name="y">0</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Separator" id="separator8">
+            <property name="orient">vertical</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">95</property>
+              <property name="x">1050</property>
+              <property name="y">0</property>
             </layout>
           </object>
         </child>
