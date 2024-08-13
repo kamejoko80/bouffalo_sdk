@@ -109,6 +109,41 @@
             </layout>
           </object>
         </child>
+        <child>
+          <object class="ttk.Button" id="button_sendcmd" named="True">
+            <property name="text" translatable="yes">Send Cmd</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">35</property>
+              <property name="width">150</property>
+              <property name="x">330</property>
+              <property name="y">50</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="entry_cmd" named="True">
+            <property name="justify">right</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">100</property>
+              <property name="x">380</property>
+              <property name="y">10</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label_cmd" named="True">
+            <property name="justify">left</property>
+            <property name="text" translatable="yes">Cmd</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">340</property>
+              <property name="y">15</property>
+            </layout>
+          </object>
+        </child>
       </object>
     </child>
   </object>
