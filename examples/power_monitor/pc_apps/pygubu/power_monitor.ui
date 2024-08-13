@@ -146,8 +146,8 @@
         </child>
         <child>
           <object class="ttk.OptionMenu" id="optionmenu_convtime" named="True">
-            <property name="value">280uS</property>
-            <property name="values">280uS, 540uS</property>
+            <property name="value">4120uS</property>
+            <property name="values">280uS, 540uS, 4120uS</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">30</property>
@@ -175,7 +175,7 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">30</property>
-              <property name="width">80</property>
+              <property name="width">120</property>
               <property name="x">650</property>
               <property name="y">10</property>
             </layout>
@@ -188,8 +188,8 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">30</property>
-              <property name="width">80</property>
-              <property name="x">730</property>
+              <property name="width">100</property>
+              <property name="x">770</property>
               <property name="y">10</property>
             </layout>
           </object>
@@ -201,7 +201,7 @@
               <property name="anchor">nw</property>
               <property name="height">35</property>
               <property name="width">150</property>
-              <property name="x">660</property>
+              <property name="x">720</property>
               <property name="y">50</property>
             </layout>
           </object>
@@ -215,8 +215,8 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">30</property>
-              <property name="width">100</property>
-              <property name="x">890</property>
+              <property name="width">200</property>
+              <property name="x">930</property>
               <property name="y">10</property>
             </layout>
           </object>
@@ -227,7 +227,7 @@
             <property name="text" translatable="yes">Vbat [V]</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="x">830</property>
+              <property name="x">880</property>
               <property name="y">15</property>
             </layout>
           </object>
@@ -239,7 +239,7 @@
               <property name="anchor">nw</property>
               <property name="height">30</property>
               <property name="width">50</property>
-              <property name="x">995</property>
+              <property name="x">1150</property>
               <property name="y">10</property>
             </layout>
           </object>
@@ -251,7 +251,7 @@
               <property name="anchor">nw</property>
               <property name="height">30</property>
               <property name="width">200</property>
-              <property name="x">820</property>
+              <property name="x">1150</property>
               <property name="y">52</property>
             </layout>
           </object>
@@ -261,7 +261,7 @@
             <property name="orient">horizontal</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="width">1050</property>
+              <property name="width">1270</property>
               <property name="x">5</property>
               <property name="y">0</property>
             </layout>
@@ -272,7 +272,7 @@
             <property name="orient">horizontal</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="width">1050</property>
+              <property name="width">1270</property>
               <property name="x">5</property>
               <property name="y">95</property>
             </layout>
@@ -317,7 +317,7 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">95</property>
-              <property name="x">815</property>
+              <property name="x">875</property>
               <property name="y">0</property>
             </layout>
           </object>
@@ -328,8 +328,32 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">95</property>
-              <property name="x">1050</property>
+              <property name="x">1275</property>
               <property name="y">0</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="tk.Canvas" id="canvas_voltage" named="True">
+            <property name="background">#000000</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">150</property>
+              <property name="width">1260</property>
+              <property name="x">10</property>
+              <property name="y">105</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="button_set_vbat_voltage" named="True">
+            <property name="text" translatable="yes">Set Vbat</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">35</property>
+              <property name="width">150</property>
+              <property name="x">980</property>
+              <property name="y">50</property>
             </layout>
           </object>
         </child>
