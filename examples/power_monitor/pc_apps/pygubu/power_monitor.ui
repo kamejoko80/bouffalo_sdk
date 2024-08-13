@@ -144,6 +144,65 @@
             </layout>
           </object>
         </child>
+        <child>
+          <object class="ttk.OptionMenu" id="optionmenu_convtime" named="True">
+            <property name="values">280uS, 540uS</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">80</property>
+              <property name="x">570</property>
+              <property name="y">10</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label_config_param" named="True">
+            <property name="justify">left</property>
+            <property name="text" translatable="yes">Config Param</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">490</property>
+              <property name="y">15</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.OptionMenu" id="optionmenu_avgnum" named="True">
+            <property name="values">AVG_NUM_512, AVG_NUM_1024</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">80</property>
+              <property name="x">650</property>
+              <property name="y">10</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.OptionMenu" id="optionmenu_adc_range" named="True">
+            <property name="values">RANGE_0, RANGE_1</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">80</property>
+              <property name="x">730</property>
+              <property name="y">10</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="button_config_adc" named="True">
+            <property name="text" translatable="yes">Config ADC</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">35</property>
+              <property name="width">150</property>
+              <property name="x">660</property>
+              <property name="y">50</property>
+            </layout>
+          </object>
+        </child>
       </object>
     </child>
   </object>
