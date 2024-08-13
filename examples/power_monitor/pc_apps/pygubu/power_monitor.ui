@@ -1,0 +1,115 @@
+<?xml version='1.0' encoding='utf-8'?>
+<interface version="1.4" author="PygubuDesigner 0.39.3">
+  <project>
+    <settings>
+      <setting id="name">main_gui</setting>
+      <setting id="description">Power Monitor Main GUI</setting>
+      <setting id="module_name">auto_generate</setting>
+      <setting id="template">application</setting>
+      <setting id="main_widget">toplevel</setting>
+      <setting id="main_classname">auto_generate</setting>
+      <setting id="main_menu" />
+      <setting id="output_dir" />
+      <setting id="output_dir2" />
+      <setting id="import_tkvariables">True</setting>
+      <setting id="use_ttk_styledefinition_file">True</setting>
+      <setting id="use_i18n">False</setting>
+      <setting id="all_ids_attributes">False</setting>
+      <setting id="generate_code_onsave">False</setting>
+      <setting id="use_window_centering_code">False</setting>
+      <setting id="ttk_style_definition_file" />
+    </settings>
+    <customwidgets />
+  </project>
+  <object class="tk.Toplevel" id="toplevel" named="True">
+    <property name="cursor">arrow</property>
+    <property name="geometry">1280x768</property>
+    <property name="height">200</property>
+    <property name="overrideredirect">false</property>
+    <property name="relief">flat</property>
+    <property name="resizable">none</property>
+    <property name="title" translatable="yes">Power Monitor</property>
+    <property name="width">200</property>
+    <child>
+      <object class="ttk.Frame" id="frame_main" named="True">
+        <property name="height">768</property>
+        <property name="width">1280</property>
+        <layout manager="pack">
+          <property name="side">top</property>
+        </layout>
+        <child>
+          <object class="ttk.Button" id="button_connect" named="True">
+            <property name="text" translatable="yes">Connect</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">35</property>
+              <property name="width">150</property>
+              <property name="x">10</property>
+              <property name="y">50</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="button_disconnect" named="True">
+            <property name="text" translatable="yes">Disconnect</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">35</property>
+              <property name="width">150</property>
+              <property name="x">170</property>
+              <property name="y">50</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="entry_port" named="True">
+            <property name="justify">right</property>
+            <property name="text" translatable="yes">COM22</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">80</property>
+              <property name="x">80</property>
+              <property name="y">10</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="entry_baudrate" named="True">
+            <property name="justify">right</property>
+            <property name="text" translatable="yes">10000000</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">100</property>
+              <property name="x">220</property>
+              <property name="y">10</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label_port" named="True">
+            <property name="justify">left</property>
+            <property name="text" translatable="yes">Port</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">40</property>
+              <property name="y">15</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label_baud" named="True">
+            <property name="justify">left</property>
+            <property name="text" translatable="yes">Baud</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">180</property>
+              <property name="y">15</property>
+            </layout>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
