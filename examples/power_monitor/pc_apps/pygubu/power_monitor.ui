@@ -241,6 +241,18 @@
             </layout>
           </object>
         </child>
+        <child>
+          <object class="ttk.Checkbutton" id="checkbutton_vbat_enable" named="True">
+            <property name="text" translatable="yes">Vbat Enable</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">200</property>
+              <property name="x">820</property>
+              <property name="y">52</property>
+            </layout>
+          </object>
+        </child>
       </object>
     </child>
   </object>
