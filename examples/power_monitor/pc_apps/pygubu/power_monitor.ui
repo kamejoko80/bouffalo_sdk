@@ -203,6 +203,44 @@
             </layout>
           </object>
         </child>
+        <child>
+          <object class="ttk.Scale" id="scale_voltage_out" named="True">
+            <property name="from_">0</property>
+            <property name="orient">horizontal</property>
+            <property name="to">3622</property>
+            <property name="value">2000</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">100</property>
+              <property name="x">890</property>
+              <property name="y">10</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label_vbat" named="True">
+            <property name="justify">left</property>
+            <property name="text" translatable="yes">Vbat [V]</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">830</property>
+              <property name="y">15</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="entry_vbat_value" named="True">
+            <property name="justify">right</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">50</property>
+              <property name="x">995</property>
+              <property name="y">10</property>
+            </layout>
+          </object>
+        </child>
       </object>
     </child>
   </object>
