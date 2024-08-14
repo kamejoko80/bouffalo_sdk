@@ -466,14 +466,12 @@ class UARTApp:
             messagebox.showerror("Connection Error", str(e))
 
     def disconnect(self):
-        self.is_receiving = False
-        if self.receive_thread:
-            self.receive_thread.join()
         if self.serial_port and self.serial_port.is_open:
             self.serial_port.close()
             messagebox.showinfo("Disconnection", "Disconnected from the UART port")
-        else:
-            messagebox.showerror("Error", "No UART port is currently connected")
+        self.is_receiving = False
+        if self.receive_thread:
+            self.receive_thread.join()
 
     def send_data(self):
         if not self.serial_port or not self.serial_port.is_open:
@@ -524,7 +522,7 @@ class UARTApp:
                         #self.output_text.see(tk.END)
             except Exception as e:
                 self.is_receiving = False
-                messagebox.showerror("Error", str(e))
+                #messagebox.showerror("Error", str(e))
                 break
 
     def update_current_waveform(self, current_data):
@@ -586,11 +584,7 @@ class UARTApp:
         self.output_text.delete('1.0', tk.END)
 
     def close(self):
-        self.is_receiving = False
-        if self.receive_thread:
-            self.receive_thread.join()
-        if self.serial_port and self.serial_port.is_open:
-            self.serial_port.close()
+        self.disconnect()
         self.root.destroy()
 
 if __name__ == "__main__":

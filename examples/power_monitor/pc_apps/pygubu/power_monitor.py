@@ -455,24 +455,18 @@ class auto_generateUI:
             messagebox.showerror("Connection Error", str(e))
 
     def disconnect(self):
-        self.is_receiving = False
-        if self.receive_thread:
-            self.receive_thread.join()
         if self.serial_port and self.serial_port.is_open:
             self.serial_port.close()
             messagebox.showinfo("Disconnection", "Disconnected from the UART port")
-        else:
-            messagebox.showerror("Error", "No UART port is currently connected")
+        self.is_receiving = False
+        if self.receive_thread:
+            self.receive_thread.join()
 
     def clear_output(self):
         self.output_text.delete('1.0', tk.END)
 
     def close(self):
-        self.is_receiving = False
-        if self.receive_thread:
-            self.receive_thread.join()
-        if self.serial_port and self.serial_port.is_open:
-            self.serial_port.close()
+        self.disconnect()
         self.mainwindow.destroy()
 
     def send_data(self):
@@ -524,7 +518,7 @@ class auto_generateUI:
                         #self.output_text.see(tk.END)
             except Exception as e:
                 self.is_receiving = False
-                messagebox.showerror("Error", str(e))
+                #messagebox.showerror("Error", str(e))
                 break
 
 
