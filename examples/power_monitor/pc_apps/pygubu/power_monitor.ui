@@ -417,6 +417,169 @@
             </layout>
           </object>
         </child>
+        <child>
+          <object class="ttk.Button" id="button_start_measuring" named="True">
+            <property name="text" translatable="yes">Start Measuring</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">35</property>
+              <property name="width">150</property>
+              <property name="x">840</property>
+              <property name="y">660</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="button_stop_measuring" named="True">
+            <property name="text" translatable="yes">Stop Measuring</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">35</property>
+              <property name="width">150</property>
+              <property name="x">1040</property>
+              <property name="y">660</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="button_clear_status" named="True">
+            <property name="text" translatable="yes">Clear Status</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">35</property>
+              <property name="width">150</property>
+              <property name="x">840</property>
+              <property name="y">710</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="button_quick_application" named="True">
+            <property name="text" translatable="yes">Quick App</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">35</property>
+              <property name="width">150</property>
+              <property name="x">1040</property>
+              <property name="y">710</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="entry_maker1_value" named="True">
+            <property name="justify">right</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">70</property>
+              <property name="x">800</property>
+              <property name="y">610</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="entry_maker2_value" named="True">
+            <property name="justify">right</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">70</property>
+              <property name="x">890</property>
+              <property name="y">610</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="entry_max" named="True">
+            <property name="justify">right</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">70</property>
+              <property name="x">980</property>
+              <property name="y">610</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="entry_min" named="True">
+            <property name="justify">right</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">70</property>
+              <property name="x">1070</property>
+              <property name="y">610</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="entry_average" named="True">
+            <property name="justify">right</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">70</property>
+              <property name="x">1160</property>
+              <property name="y">610</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label_marker1_value" named="True">
+            <property name="justify">left</property>
+            <property name="text" translatable="yes">M1 [mA]</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">810</property>
+              <property name="y">585</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label_maker2_value" named="True">
+            <property name="justify">left</property>
+            <property name="text" translatable="yes">M2 [mA]</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">900</property>
+              <property name="y">585</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label_min" named="True">
+            <property name="justify">left</property>
+            <property name="text" translatable="yes">Min [mA]</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">985</property>
+              <property name="y">585</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label_max" named="True">
+            <property name="justify">left</property>
+            <property name="text" translatable="yes">Max [mA]</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">1075</property>
+              <property name="y">585</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label_average" named="True">
+            <property name="justify">left</property>
+            <property name="text" translatable="yes">Avg [mA]</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">1165</property>
+              <property name="y">585</property>
+            </layout>
+          </object>
+        </child>
       </object>
     </child>
   </object>
