@@ -149,7 +149,6 @@
         </child>
         <child>
           <object class="ttk.OptionMenu" id="optionmenu_convtime" named="True">
-            <property name="values">280uS, 540uS, 4120uS</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">30</property>
@@ -194,6 +193,7 @@
         </child>
         <child>
           <object class="ttk.Button" id="button_config_adc" named="True">
+            <property name="command" type="command" cbtype="simple">execute_adc_configuration</property>
             <property name="text" translatable="yes">Config ADC</property>
             <layout manager="place">
               <property name="anchor">nw</property>

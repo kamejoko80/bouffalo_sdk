@@ -85,25 +85,19 @@ class auto_generateUI:
         # Process conversion time drop-down list
         self.selected_convtime_key = tk.StringVar(master)
         self.selected_convtime_key.set(next(iter(conversion_times.keys())))  # Set default value
-        self.selected_conversion_time = conversion_times.get("280uS")
         self.update_optionmenu_convtime_items()
-        self.selected_convtime_key.trace("w", self.update_convtime)
         self.optionmenu_convtime['textvariable'] = self.selected_convtime_key
 
         # Process average num drop-down list
         self.selected_avgnum_key = tk.StringVar(master)
         self.selected_avgnum_key.set(next(iter(average_num.keys())))  # Set default value
-        self.selected_average_num = average_num.get("AVG_NUM_1")
         self.update_optionmenu_avgnum_items()
-        self.selected_avgnum_key.trace("w", self.update_avgnum)
         self.optionmenu_avgnum['textvariable'] = self.selected_avgnum_key
 
         # Process adc range drop-down list
         self.selected_adcrange_key = tk.StringVar(master)
         self.selected_adcrange_key.set(next(iter(adc_range.keys())))  # Set default value
-        self.selected_adc_range = adc_range.get("RANGE_0")
         self.update_optionmenu_adcrange_items()
-        self.selected_adcrange_key.trace("w", self.update_adcrange)
         self.optionmenu_adcrange['textvariable'] = self.selected_adcrange_key
 
         # Link scrollbars
@@ -153,32 +147,17 @@ class auto_generateUI:
         for key in conversion_times.keys():
             menu.add_command(label=key, command=tk._setit(self.selected_convtime_key, key))
 
-    def update_convtime(self, *args):
-        selected_convtime_key = self.selected_convtime_key.get()
-        self.selected_conversion_time = conversion_times.get(selected_convtime_key)
-        # print(f"Selected: {selected_convtime_key}, Value: {self.selected_conversion_time:#04x}")
-
     def update_optionmenu_avgnum_items(self):
         menu = self.optionmenu_avgnum['menu']
         menu.delete(0, 'end')  # Clear existing items
         for key in average_num.keys():
             menu.add_command(label=key, command=tk._setit(self.selected_avgnum_key, key))
 
-    def update_avgnum(self, *args):
-        selected_avgnum_key = self.selected_avgnum_key.get()
-        self.selected_average_num = average_num.get(selected_avgnum_key)
-        # print(f"Selected: {selected_avgnum_key}, Value: {self.selected_average_num:#04x}")
-
     def update_optionmenu_adcrange_items(self):
         menu = self.optionmenu_adcrange['menu']
         menu.delete(0, 'end')  # Clear existing items
         for key in adc_range.keys():
             menu.add_command(label=key, command=tk._setit(self.selected_adcrange_key, key))
-
-    def update_adcrange(self, *args):
-        selected_adcrange_key = self.selected_adcrange_key.get()
-        self.selected_adc_range = adc_range.get(selected_adcrange_key)
-        # print(f"Selected: {selected_adcrange_key}, Value: {self.selected_adc_range:#04x}")
 
     def update_marker_values(self):
         # Ensure marker positions are within the bounds of current_data
@@ -418,18 +397,18 @@ class auto_generateUI:
 
     def execute_adc_configuration(self):
         cmd = bytearray()
-        selected_conv_time = self.selected_conversion_time.get()
+        selected_conv_time = self.selected_convtime_key.get()
         hex_value = conversion_times[selected_conv_time]
         cmd.extend([0x02, 0x00, 0x00, 0x00]) # Command write config
         cmd.append(hex_value) # added cnv_time
         self.output_text.insert(tk.END, f"Selected Conversion Time: {selected_conv_time} (0x{hex_value:X})\n")
 
-        selected_avg_num = self.selected_average_num.get()
+        selected_avg_num = self.selected_avgnum_key.get()
         hex_value = average_num[selected_avg_num]
         cmd.append(hex_value) # added avg_num
         self.output_text.insert(tk.END, f"Selected Average Num: {selected_avg_num} (0x{hex_value:X})\n")
 
-        selected_adc_range = self.selected_adc_range.get()
+        selected_adc_range = self.selected_adcrange_key.get()
         hex_value = adc_range[selected_adc_range]
         cmd.append(hex_value) # added adc_range
         cmd.append(0x01)      # added avg_alert
