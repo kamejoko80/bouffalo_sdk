@@ -393,6 +393,30 @@
             </layout>
           </object>
         </child>
+        <child>
+          <object class="ttk.Scrollbar" id="crollbar_horizontal" named="True">
+            <property name="orient">horizontal</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">20</property>
+              <property name="width">750</property>
+              <property name="x">10</property>
+              <property name="y">740</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Scrollbar" id="scrollbar_vertical" named="True">
+            <property name="orient">vertical</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">165</property>
+              <property name="width">20</property>
+              <property name="x">744</property>
+              <property name="y">575</property>
+            </layout>
+          </object>
+        </child>
       </object>
     </child>
   </object>
