@@ -39,6 +39,7 @@
         </layout>
         <child>
           <object class="ttk.Button" id="button_connect" named="True">
+            <property name="command" type="command" cbtype="simple">connect</property>
             <property name="text" translatable="yes">Connect</property>
             <layout manager="place">
               <property name="anchor">nw</property>
@@ -51,6 +52,7 @@
         </child>
         <child>
           <object class="ttk.Button" id="button_disconnect" named="True">
+            <property name="command" type="command" cbtype="simple">disconnect</property>
             <property name="text" translatable="yes">Disconnect</property>
             <layout manager="place">
               <property name="anchor">nw</property>
@@ -111,6 +113,7 @@
         </child>
         <child>
           <object class="ttk.Button" id="button_sendcmd" named="True">
+            <property name="command" type="command" cbtype="simple">send_data</property>
             <property name="text" translatable="yes">Send Cmd</property>
             <layout manager="place">
               <property name="anchor">nw</property>
@@ -146,7 +149,6 @@
         </child>
         <child>
           <object class="ttk.OptionMenu" id="optionmenu_convtime" named="True">
-            <property name="value">4120uS</property>
             <property name="values">280uS, 540uS, 4120uS</property>
             <layout manager="place">
               <property name="anchor">nw</property>
@@ -170,8 +172,6 @@
         </child>
         <child>
           <object class="ttk.OptionMenu" id="optionmenu_avgnum" named="True">
-            <property name="value">AVG_NUM_512</property>
-            <property name="values">AVG_NUM_512, AVG_NUM_1024</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">30</property>
@@ -182,9 +182,7 @@
           </object>
         </child>
         <child>
-          <object class="ttk.OptionMenu" id="optionmenu_adc_range" named="True">
-            <property name="value">RANGE_0</property>
-            <property name="values">RANGE_0, RANGE_1</property>
+          <object class="ttk.OptionMenu" id="optionmenu_adcrange" named="True">
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">30</property>
@@ -419,6 +417,7 @@
         </child>
         <child>
           <object class="ttk.Button" id="button_start_measuring" named="True">
+            <property name="command" type="command" cbtype="simple">execute_start_measuring</property>
             <property name="text" translatable="yes">Start Measuring</property>
             <layout manager="place">
               <property name="anchor">nw</property>
@@ -431,6 +430,7 @@
         </child>
         <child>
           <object class="ttk.Button" id="button_stop_measuring" named="True">
+            <property name="command" type="command" cbtype="simple">execute_stop_measuring</property>
             <property name="text" translatable="yes">Stop Measuring</property>
             <layout manager="place">
               <property name="anchor">nw</property>
@@ -443,6 +443,7 @@
         </child>
         <child>
           <object class="ttk.Button" id="button_clear_status" named="True">
+            <property name="command" type="command" cbtype="simple">clear_output</property>
             <property name="text" translatable="yes">Clear Status</property>
             <layout manager="place">
               <property name="anchor">nw</property>
@@ -455,6 +456,7 @@
         </child>
         <child>
           <object class="ttk.Button" id="button_quick_application" named="True">
+            <property name="command" type="command" cbtype="simple">close</property>
             <property name="text" translatable="yes">Quick App</property>
             <layout manager="place">
               <property name="anchor">nw</property>
@@ -466,7 +468,7 @@
           </object>
         </child>
         <child>
-          <object class="ttk.Entry" id="entry_maker1_value" named="True">
+          <object class="ttk.Entry" id="entry_marker1_value" named="True">
             <property name="justify">right</property>
             <layout manager="place">
               <property name="anchor">nw</property>
@@ -478,7 +480,7 @@
           </object>
         </child>
         <child>
-          <object class="ttk.Entry" id="entry_maker2_value" named="True">
+          <object class="ttk.Entry" id="entry_marker2_value" named="True">
             <property name="justify">right</property>
             <layout manager="place">
               <property name="anchor">nw</property>
