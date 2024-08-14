@@ -89,7 +89,7 @@ void cmd_process(uint8_t *cmd_buff, uint32_t len)
             {
                 resp->result = 1;
                 resp->config = p_cmd->config;
-                resp->hw_config.vcc = ADC_VCC;
+                resp->hw_config.vcc = DAC_VCC;
                 resp->hw_config.rshunt = RSHUNT;
                 ina229_config = p_cmd->config;
             }
@@ -103,7 +103,7 @@ void cmd_process(uint8_t *cmd_buff, uint32_t len)
             printf("CMD read ina229 config params\r\n");
             resp->result = 1;
             resp->config = ina229_config;
-            resp->hw_config.vcc = ADC_VCC;
+            resp->hw_config.vcc = DAC_VCC;
             resp->hw_config.rshunt = RSHUNT;
             cdc_acm_cmd_response_send();
             break;

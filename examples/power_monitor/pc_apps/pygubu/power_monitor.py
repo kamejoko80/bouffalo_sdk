@@ -20,8 +20,8 @@ RESOURCE_PATHS = [PROJECT_PATH]
 SIGNATURE = 0x87654321
 DATA_RPT_SAMPLE_SIZE = 63  # The size of the current and voltage arrays
 MAX_DATA_SIZE = 100000     # Maximum number of samples for zoom-out
-ADC_VCC = 4.75             # DAC VCC power supply voltage
-DATA_MAX_4P2 = 3622        # DATA_MAX_4P2 = 4096 * 4.2 / ADC_VCC
+DAC_VCC = 4.75             # DAC VCC power supply voltage
+DATA_MAX_4P2 = 3622        # DATA_MAX_4P2 = 4096 * 4.2 / DAC_VCC
 DATA_3P8 = 3350            # Default VBAT output = 3.8V
 
 conversion_times = {
@@ -86,12 +86,18 @@ class auto_generateUI:
         self.input_entry = self.builder.get_object('entry_cmd', master)
         self.scale_vbat = self.builder.get_object('scale_voltage_out', master)
         self.entry_vbat = self.builder.get_object('entry_vbat_value', master)
+        self.checkbt_vbat_ena = self.builder.get_object('checkbutton_vbat_enable', master)
+
+        # Set default vbat output disable and register callback function
+        self.check_var = tk.BooleanVar(value=False)  # Default to unchecked
+        self.checkbt_vbat_ena.config(variable=self.check_var, onvalue=True, offvalue=False)
+        self.check_var.trace_add("write", self.on_change_vbat_enable)
 
         # Configure VBAT min/max output and default value
         self.scale_vbat.configure(from_=0, to=DATA_MAX_4P2)
         self.scale_vbat.set(DATA_3P8)
         int_value = int(float(self.scale_vbat.get()))
-        vbat_voltage = (ADC_VCC * int_value) / 4096
+        vbat_voltage = (DAC_VCC * int_value) / 4096
         self.entry_vbat.config(state=tk.NORMAL)
         self.entry_vbat.delete(0, tk.END)
         self.entry_vbat.insert(0, f"{vbat_voltage:.2f}")
@@ -196,9 +202,35 @@ class auto_generateUI:
         self.marker1_text.insert(0, format_value(marker1_value))
         self.marker2_text.insert(0, format_value(marker2_value))
 
+    def on_change_vbat_enable(self, *args):
+        # Prepare command "Battery simulator volatge output enable/disable"
+        cmd = bytearray()
+        if self.check_var.get():
+            #print("Checkbutton is checked")
+            cmd.extend([0x06, 0x01, 0x00, 0x00])
+        else:
+            cmd.extend([0x06, 0x00, 0x00, 0x00])
+            #print("Checkbutton is unchecked")
+
+        if not self.serial_port or not self.serial_port.is_open:
+            messagebox.showerror("Error", "Please connect to a UART port first.")
+            return
+        try:
+            # Write adc config param command
+            self.serial_port.write(cmd)
+            response = self.serial_port.read(16)
+            self.output_text.insert(tk.END, f"Response: {response}\n")
+            if response[0] != cmd[0] or response[1] != 0x01:
+                messagebox.showerror("Error", "Device respone error")
+                return
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+        self.output_text.see(tk.END)
+
     def on_scale_change(self, value):
         int_value = int(float(value))
-        vbat_voltage = (ADC_VCC * int_value) / 4096
+        vbat_voltage = (DAC_VCC * int_value) / 4096
         self.entry_vbat.config(state=tk.NORMAL)
         self.entry_vbat.delete(0, tk.END)
         self.entry_vbat.insert(0, f"{vbat_voltage:.2f}")
@@ -218,7 +250,6 @@ class auto_generateUI:
         if not self.serial_port or not self.serial_port.is_open:
             messagebox.showerror("Error", "Please connect to a UART port first.")
             return
-
         try:
             # Write adc config param command
             self.serial_port.write(cmd)
@@ -227,7 +258,6 @@ class auto_generateUI:
             if response[0] != cmd[0] or response[1] != 0x01:
                 messagebox.showerror("Error", "Device respone error")
                 return
-
         except Exception as e:
             messagebox.showerror("Error", str(e))
 

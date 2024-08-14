@@ -65,7 +65,7 @@
  *
  */
 
-#define ADC_VCC (4.75)
+#define DAC_VCC (4.75)
 #define RSHUNT  (0.05)
 
 /* LSB in case ADCRANGE = 0 */

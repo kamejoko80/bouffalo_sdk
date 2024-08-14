@@ -66,8 +66,8 @@ int main(void)
     gowin_fpga_config();
 
     bat_sim_read_config_data_code_epprom();
-    bat_sim_fast_mode_write(DATA_3P8);
-    tca9534_pin_control(BAT_SIM_ENA, 1);
+    bat_sim_fast_mode_write(DATA_3P8); /* Default output voltage */
+    //tca9534_pin_control(BAT_SIM_ENA, 1);
     tca9534_pin_control(VOL_MEASURE, 1);
     printf("Enable battery simulator output\r\n");
 

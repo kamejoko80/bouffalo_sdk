@@ -11,12 +11,12 @@
 #include "ina229.h"
 
 /*
- * Vout = ADC_VCC x data / 4096
- * Where ADC_VCC ~ 4.75 volts (form USB cable)
+ * Vout = DAC_VCC x data / 4096
+ * Where DAC_VCC ~ 4.75 volts (form USB cable)
  * data is in range [0 - 4095]
  * we limit the output voltage is 4.2 volts
  *
- * DATA_MAX_4P2 = 4096 * 4.2 / ADC_VCC
+ * DATA_MAX_4P2 = 4096 * 4.2 / DAC_VCC
  */
 
 #define DATA_MAX_4P2 (3622)

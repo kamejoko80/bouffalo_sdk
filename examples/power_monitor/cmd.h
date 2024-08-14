@@ -43,7 +43,7 @@
  *  [0] 0x04      0x00       0x00        0x00         : Configure the INA229 with the above parameters
  *  [0] 0x04      0x0/1      0x00        0x00         : Response
  * --------------------------------------------------------------------------------------------
- *  [0] 0x05      VAL_L      VAL_H       0x00         : Set battery simulator volatge
+ *  [0] 0x05      VAL_H      VAL_L       0x00         : Set battery simulator volatge
  *  [0] 0x05      0x0/1      0x00        0x00         : Response
  * --------------------------------------------------------------------------------------------
  *  [0] 0x06      0x01       0x00        0x00         : Battery simulator volatge output enable

@@ -585,6 +585,17 @@
             </layout>
           </object>
         </child>
+        <child>
+          <object class="ttk.Label" id="label_vbat_unit" named="True">
+            <property name="justify">left</property>
+            <property name="text" translatable="yes">[V]</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">1205</property>
+              <property name="y">15</property>
+            </layout>
+          </object>
+        </child>
       </object>
     </child>
   </object>

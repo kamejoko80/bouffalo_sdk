@@ -76,7 +76,7 @@ void bat_sim_fast_mode_write(uint16_t data)
     msgs[0].buffer = p_tx;
     msgs[0].length = 2;
 
-    printf("Set voltage output: %f\r\n", (value * ADC_VCC)/4096);
+    printf("Set voltage output: %f\r\n", (value * DAC_VCC)/4096);
 
     bflb_i2c_transfer(i2c0, msgs, 1);
 }
