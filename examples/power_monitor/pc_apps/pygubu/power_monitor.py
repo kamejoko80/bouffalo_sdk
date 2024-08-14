@@ -20,6 +20,9 @@ RESOURCE_PATHS = [PROJECT_PATH]
 SIGNATURE = 0x87654321
 DATA_RPT_SAMPLE_SIZE = 63  # The size of the current and voltage arrays
 MAX_DATA_SIZE = 100000     # Maximum number of samples for zoom-out
+ADC_VCC = 4.75             # DAC VCC power supply voltage
+DATA_MAX_4P2 = 3622        # DATA_MAX_4P2 = 4096 * 4.2 / ADC_VCC
+DATA_3P8 = 3350            # Default VBAT output = 3.8V
 
 conversion_times = {
     "280uS": 0x3,
@@ -81,6 +84,17 @@ class auto_generateUI:
         self.optionmenu_avgnum = self.builder.get_object('optionmenu_avgnum', master)
         self.optionmenu_adcrange = self.builder.get_object('optionmenu_adcrange', master)
         self.input_entry = self.builder.get_object('entry_cmd', master)
+        self.scale_vbat = self.builder.get_object('scale_voltage_out', master)
+        self.entry_vbat = self.builder.get_object('entry_vbat_value', master)
+
+        # Configure VBAT min/max output and default value
+        self.scale_vbat.configure(from_=0, to=DATA_MAX_4P2)
+        self.scale_vbat.set(DATA_3P8)
+        int_value = int(float(self.scale_vbat.get()))
+        vbat_voltage = (ADC_VCC * int_value) / 4096
+        self.entry_vbat.config(state=tk.NORMAL)
+        self.entry_vbat.delete(0, tk.END)
+        self.entry_vbat.insert(0, f"{vbat_voltage:.2f}")
 
         # Process conversion time drop-down list
         self.selected_convtime_key = tk.StringVar(master)
@@ -181,6 +195,43 @@ class auto_generateUI:
 
         self.marker1_text.insert(0, format_value(marker1_value))
         self.marker2_text.insert(0, format_value(marker2_value))
+
+    def on_scale_change(self, value):
+        int_value = int(float(value))
+        vbat_voltage = (ADC_VCC * int_value) / 4096
+        self.entry_vbat.config(state=tk.NORMAL)
+        self.entry_vbat.delete(0, tk.END)
+        self.entry_vbat.insert(0, f"{vbat_voltage:.2f}")
+        # print(f"Scale value changed to: {int_value}")
+
+    def on_set_vbat_value(self):
+        # Get VBAT setting value
+        int_value = int(float(self.scale_vbat.get()))
+        low_byte = int_value & 0xFF
+        high_byte = (int_value >> 8) & 0xFF
+
+        # Prepare command "set battery simulator volatge"
+        cmd = bytearray()
+        cmd.extend([0x05, high_byte, low_byte, 0x00])
+        self.output_text.insert(tk.END, f"Command: {cmd}\n")
+
+        if not self.serial_port or not self.serial_port.is_open:
+            messagebox.showerror("Error", "Please connect to a UART port first.")
+            return
+
+        try:
+            # Write adc config param command
+            self.serial_port.write(cmd)
+            response = self.serial_port.read(16)
+            self.output_text.insert(tk.END, f"Response: {response}\n")
+            if response[0] != cmd[0] or response[1] != 0x01:
+                messagebox.showerror("Error", "Device respone error")
+                return
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+        self.output_text.see(tk.END)
 
     def on_scroll(self, event):
         if self.is_measuring == True:

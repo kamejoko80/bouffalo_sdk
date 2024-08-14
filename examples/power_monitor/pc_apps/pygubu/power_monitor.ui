@@ -206,6 +206,7 @@
         </child>
         <child>
           <object class="ttk.Scale" id="scale_voltage_out" named="True">
+            <property name="command" type="command" cbtype="scale">on_scale_change</property>
             <property name="from_">0</property>
             <property name="orient">horizontal</property>
             <property name="to">3622</property>
@@ -213,8 +214,8 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">30</property>
-              <property name="width">200</property>
-              <property name="x">930</property>
+              <property name="width">170</property>
+              <property name="x">960</property>
               <property name="y">10</property>
             </layout>
           </object>
@@ -222,7 +223,7 @@
         <child>
           <object class="ttk.Label" id="label_vbat" named="True">
             <property name="justify">left</property>
-            <property name="text" translatable="yes">Vbat [V]</property>
+            <property name="text" translatable="yes">VBAT Setting</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="x">880</property>
@@ -233,6 +234,7 @@
         <child>
           <object class="ttk.Entry" id="entry_vbat_value" named="True">
             <property name="justify">right</property>
+            <property name="state">normal</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">30</property>
@@ -244,7 +246,7 @@
         </child>
         <child>
           <object class="ttk.Checkbutton" id="checkbutton_vbat_enable" named="True">
-            <property name="text" translatable="yes">Vbat Enable</property>
+            <property name="text" translatable="yes">VBAT Enable</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">30</property>
@@ -345,7 +347,8 @@
         </child>
         <child>
           <object class="ttk.Button" id="button_set_vbat_voltage" named="True">
-            <property name="text" translatable="yes">Set Vbat</property>
+            <property name="command" type="command" cbtype="simple">on_set_vbat_value</property>
+            <property name="text" translatable="yes">Set VBAT</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">35</property>
