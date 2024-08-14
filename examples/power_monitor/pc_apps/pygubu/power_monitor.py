@@ -19,6 +19,15 @@ class auto_generateUI:
             "toplevel", master)
         self.builder.connect_callbacks(self)
 
+        # Link scrollbars
+        self.text_status = self.builder.get_object('text_status', master)
+        self.vscroll = self.builder.get_object('scrollbar_vertical', master)
+        self.hscroll = self.builder.get_object('scrollbar_horizontal', master)
+
+        self.text_status.config(yscrollcommand=self.vscroll.set, xscrollcommand=self.hscroll.set)
+        self.vscroll.config(command=self.text_status.yview)
+        self.hscroll.config(command=self.text_status.xview)
+
     def run(self):
         self.mainwindow.mainloop()
 

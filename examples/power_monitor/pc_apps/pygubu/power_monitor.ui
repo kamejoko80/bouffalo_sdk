@@ -370,7 +370,7 @@
           </object>
         </child>
         <child>
-          <object class="tk.Text" id="text1">
+          <object class="tk.Text" id="text_status" named="True">
             <property name="height">10</property>
             <property name="width">50</property>
             <layout manager="place">
@@ -394,7 +394,7 @@
           </object>
         </child>
         <child>
-          <object class="ttk.Scrollbar" id="crollbar_horizontal" named="True">
+          <object class="ttk.Scrollbar" id="scrollbar_horizontal" named="True">
             <property name="orient">horizontal</property>
             <layout manager="place">
               <property name="anchor">nw</property>
