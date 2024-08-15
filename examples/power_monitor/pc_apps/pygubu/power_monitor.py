@@ -556,15 +556,15 @@ class auto_generateUI:
             messagebox.showerror("Connection Error", str(e))
 
     def disconnect(self):
+        self.is_receiving = False
+        if self.receive_thread:
+            self.receive_thread.join()
         if self.serial_port_cmd and self.serial_port_cmd.is_open:
             self.serial_port_cmd.close()
             # messagebox.showinfo("Disconnection", "Disconnected from the UART cmd port")
         if self.serial_port_data and self.serial_port_data.is_open:
             self.serial_port_data.close()
             # messagebox.showinfo("Disconnection", "Disconnected from the UART data port")
-        self.is_receiving = False
-        if self.receive_thread:
-            self.receive_thread.join()
 
     def clear_output(self):
         self.output_text.delete('1.0', tk.END)
