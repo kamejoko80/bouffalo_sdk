@@ -13,8 +13,8 @@
 #define CDC_OUT_EP 0x02
 #define CDC_INT_EP 0x83
 
-#define USBD_VID           0xFFFF
-#define USBD_PID           0xFFFF
+#define USBD_VID           0x0815
+#define USBD_PID           0x2024
 #define USBD_MAX_POWER     100
 #define USBD_LANGID_STRING 1033
 
@@ -55,39 +55,32 @@ static const uint8_t cdc_descriptor[] = {
     ///////////////////////////////////////
     0x26,                       /* bLength */
     USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
-    'C', 0x00,                  /* wcChar0 */
-    'h', 0x00,                  /* wcChar1 */
-    'e', 0x00,                  /* wcChar2 */
-    'r', 0x00,                  /* wcChar3 */
+    'p', 0x00,                  /* wcChar0 */
+    'o', 0x00,                  /* wcChar1 */
+    'w', 0x00,                  /* wcChar2 */
+    'e', 0x00,                  /* wcChar3 */
     'r', 0x00,                  /* wcChar4 */
-    'y', 0x00,                  /* wcChar5 */
-    'U', 0x00,                  /* wcChar6 */
-    'S', 0x00,                  /* wcChar7 */
-    'B', 0x00,                  /* wcChar8 */
-    ' ', 0x00,                  /* wcChar9 */
-    'C', 0x00,                  /* wcChar10 */
-    'D', 0x00,                  /* wcChar11 */
-    'C', 0x00,                  /* wcChar12 */
-    ' ', 0x00,                  /* wcChar13 */
-    'D', 0x00,                  /* wcChar14 */
-    'E', 0x00,                  /* wcChar15 */
-    'M', 0x00,                  /* wcChar16 */
-    'O', 0x00,                  /* wcChar17 */
+    '_', 0x00,                  /* wcChar5 */
+    'm', 0x00,                  /* wcChar6 */
+    'o', 0x00,                  /* wcChar7 */
+    'n', 0x00,                  /* wcChar8 */
+    'i', 0x00,                  /* wcChar9 */
+    't', 0x00,                  /* wcChar10 */
+    'o', 0x00,                  /* wcChar11 */
+    'r', 0x00,                  /* wcChar12 */
+    '_', 0x00,                  /* wcChar13 */
+    '2', 0x00,                  /* wcChar14 */
+    '0', 0x00,                  /* wcChar15 */
+    '2', 0x00,                  /* wcChar16 */
+    '4', 0x00,                  /* wcChar17 */
     ///////////////////////////////////////
     /// string3 descriptor
     ///////////////////////////////////////
-    0x16,                       /* bLength */
+    0x08,                       /* bLength */
     USB_DESCRIPTOR_TYPE_STRING, /* bDescriptorType */
-    '2', 0x00,                  /* wcChar0 */
-    '0', 0x00,                  /* wcChar1 */
-    '2', 0x00,                  /* wcChar2 */
-    '2', 0x00,                  /* wcChar3 */
-    '1', 0x00,                  /* wcChar4 */
-    '2', 0x00,                  /* wcChar5 */
-    '3', 0x00,                  /* wcChar6 */
-    '4', 0x00,                  /* wcChar7 */
-    '5', 0x00,                  /* wcChar8 */
-    '6', 0x00,                  /* wcChar9 */
+    'c', 0x00,                  /* wcChar0 */
+    'o', 0x00,                  /* wcChar1 */
+    'm', 0x00,                  /* wcChar2 */
 #ifdef CONFIG_USB_HS
     ///////////////////////////////////////
     /// device qualifier descriptor
@@ -234,7 +227,7 @@ void cdc_acm_cmd_response_send(void)
 
 void cdc_acm_data_rpt_send(void)
 {
-    usbd_ep_start_write(CDC_IN_EP, data_rpt_buffer, DATA_RPT_BUFF_SIZE);    
+    usbd_ep_start_write(CDC_IN_EP, data_rpt_buffer, DATA_RPT_BUFF_SIZE);
 }
 
 void cdc_acm_prints(char *str)
