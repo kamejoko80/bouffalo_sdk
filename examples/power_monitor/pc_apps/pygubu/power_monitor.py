@@ -55,7 +55,8 @@ class auto_generateUI:
         # Initialize other properties
         self.original_xlim = None
 
-        self.serial_port = None
+        self.serial_port_cmd = None
+        self.serial_port_data = None
         self.is_receiving = False
         self.is_measuring = False
         self.receive_thread = None
@@ -78,7 +79,8 @@ class auto_generateUI:
         self.avg_current_entry = self.builder.get_object('entry_average', master)
         self.marker1_text = self.builder.get_object('entry_marker1_value', master)
         self.marker2_text = self.builder.get_object('entry_marker2_value', master)
-        self.port_entry = self.builder.get_object('entry_port', master)
+        self.entry_port_cmd = self.builder.get_object('entry_port_cmd', master)
+        self.entry_port_data = self.builder.get_object('entry_port_data', master)
         self.baudrate_entry = self.builder.get_object('entry_baudrate', master)
         self.optionmenu_convtime = self.builder.get_object('optionmenu_convtime', master)
         self.optionmenu_avgnum = self.builder.get_object('optionmenu_avgnum', master)
@@ -214,13 +216,13 @@ class auto_generateUI:
             cmd.extend([0x06, 0x00, 0x00, 0x00])
             #print("Checkbutton is unchecked")
 
-        if not self.serial_port or not self.serial_port.is_open:
+        if not self.serial_port_cmd or not self.serial_port_cmd.is_open:
             messagebox.showerror("Error", "Please connect to a UART port first.")
             return
         try:
             # Write adc config param command
-            self.serial_port.write(cmd)
-            response = self.serial_port.read(16)
+            self.serial_port_cmd.write(cmd)
+            response = self.serial_port_cmd.read(16)
             self.output_text.insert(tk.END, f"Response: {response}\n")
             if response[0] != cmd[0] or response[1] != 0x01:
                 messagebox.showerror("Error", "Device respone error")
@@ -249,13 +251,13 @@ class auto_generateUI:
         cmd.extend([0x05, high_byte, low_byte, 0x00])
         self.output_text.insert(tk.END, f"Command: {cmd}\n")
 
-        if not self.serial_port or not self.serial_port.is_open:
+        if not self.serial_port_cmd or not self.serial_port_cmd.is_open:
             messagebox.showerror("Error", "Please connect to a UART port first.")
             return
         try:
             # Write adc config param command
-            self.serial_port.write(cmd)
-            response = self.serial_port.read(16)
+            self.serial_port_cmd.write(cmd)
+            response = self.serial_port_cmd.read(16)
             self.output_text.insert(tk.END, f"Response: {response}\n")
             if response[0] != cmd[0] or response[1] != 0x01:
                 messagebox.showerror("Error", "Device respone error")
@@ -445,15 +447,15 @@ class auto_generateUI:
     def execute_stop_measuring(self):
         cmd = bytearray()
 
-        if not self.serial_port or not self.serial_port.is_open:
+        if not self.serial_port_cmd or not self.serial_port_cmd.is_open:
             messagebox.showerror("Error", "Please connect to a UART port first.")
             return
 
         try:
             # Run command start measuring
             cmd = bytearray([0x08, 0x00, 0x00, 0x00])
-            self.serial_port.write(cmd)
-            response = self.serial_port.read(16)
+            self.serial_port_cmd.write(cmd)
+            response = self.serial_port_cmd.read(16)
             self.output_text.insert(tk.END, f"Response: {response}\n")
             # We don't expect response OK after stop measure command
             # if response[0] != cmd[0] or response[1] != 0x01:
@@ -472,15 +474,15 @@ class auto_generateUI:
     def execute_start_measuring(self):
         cmd = bytearray()
 
-        if not self.serial_port or not self.serial_port.is_open:
+        if not self.serial_port_cmd or not self.serial_port_cmd.is_open:
             messagebox.showerror("Error", "Please connect to a UART port first.")
             return
 
         try:
             # Run command start measuring
             cmd = bytearray([0x07, 0x00, 0x00, 0x00])
-            self.serial_port.write(cmd)
-            response = self.serial_port.read(16)
+            self.serial_port_cmd.write(cmd)
+            response = self.serial_port_cmd.read(16)
             self.output_text.insert(tk.END, f"Response: {response}\n")
             if response[0] != cmd[0] or response[1] != 0x01:
                 messagebox.showerror("Error", "Device respone error")
@@ -512,14 +514,14 @@ class auto_generateUI:
         self.output_text.insert(tk.END, f"Selected Adc Range: {selected_adc_range} (0x{hex_value:X})\n")
         self.output_text.insert(tk.END, f"Command: {cmd}\n")
 
-        if not self.serial_port or not self.serial_port.is_open:
+        if not self.serial_port_cmd or not self.serial_port_cmd.is_open:
             messagebox.showerror("Error", "Please connect to a UART port first.")
             return
 
         try:
             # Write adc config param command
-            self.serial_port.write(cmd)
-            response = self.serial_port.read(16)
+            self.serial_port_cmd.write(cmd)
+            response = self.serial_port_cmd.read(16)
             self.output_text.insert(tk.END, f"Response: {response}\n")
             if response[0] != cmd[0] or response[1] != 0x01:
                 messagebox.showerror("Error", "Device respone error")
@@ -527,8 +529,8 @@ class auto_generateUI:
 
             # Run command configure INA229
             cmd = bytearray([0x04, 0x00, 0x00, 0x00])
-            self.serial_port.write(cmd)
-            response = self.serial_port.read(16)
+            self.serial_port_cmd.write(cmd)
+            response = self.serial_port_cmd.read(16)
             self.output_text.insert(tk.END, f"Response: {response}\n")
             if response[0] != cmd[0] or response[1] != 0x01:
                 messagebox.showerror("Error", "Device respone error")
@@ -540,11 +542,13 @@ class auto_generateUI:
         self.output_text.see(tk.END)
 
     def connect(self):
-        port = self.port_entry.get()
+        port_cmd = self.entry_port_cmd.get()
+        port_data = self.entry_port_data.get()
         baudrate = self.baudrate_entry.get()
         try:
-            self.serial_port = serial.Serial(port, baudrate=int(baudrate), timeout=1)
-            # messagebox.showinfo("Connection", f"Connected to {port} at {baudrate} baud")
+            self.serial_port_cmd = serial.Serial(port_cmd, baudrate=int(baudrate), timeout=1)
+            self.serial_port_data = serial.Serial(port_data, baudrate=int(baudrate), timeout=1)
+            # messagebox.showinfo("Connection", f"Connected to {port_cmd} at {baudrate} baud")
             self.is_receiving = True
             self.receive_thread = threading.Thread(target=self.receive_data)
             self.receive_thread.start()
@@ -552,9 +556,12 @@ class auto_generateUI:
             messagebox.showerror("Connection Error", str(e))
 
     def disconnect(self):
-        if self.serial_port and self.serial_port.is_open:
-            self.serial_port.close()
-            messagebox.showinfo("Disconnection", "Disconnected from the UART port")
+        if self.serial_port_cmd and self.serial_port_cmd.is_open:
+            self.serial_port_cmd.close()
+            # messagebox.showinfo("Disconnection", "Disconnected from the UART cmd port")
+        if self.serial_port_data and self.serial_port_data.is_open:
+            self.serial_port_data.close()
+            # messagebox.showinfo("Disconnection", "Disconnected from the UART data port")
         self.is_receiving = False
         if self.receive_thread:
             self.receive_thread.join()
@@ -567,7 +574,7 @@ class auto_generateUI:
         self.mainwindow.destroy()
 
     def send_data(self):
-        if not self.serial_port or not self.serial_port.is_open:
+        if not self.serial_port_cmd or not self.serial_port_cmd.is_open:
             messagebox.showerror("Error", "Please connect to a UART port first.")
             return
 
@@ -576,15 +583,15 @@ class auto_generateUI:
         try:
             # Convert space-separated hex input to bytes
             data = binascii.unhexlify(hex_input.replace(" ", ""))
-            self.serial_port.write(data)
+            self.serial_port_cmd.write(data)
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
     def receive_data(self):
         while self.is_receiving:
             try:
-                if self.serial_port.in_waiting >= (4 + 4 + 4 * DATA_RPT_SAMPLE_SIZE * 2):
-                    data = self.serial_port.read(4 + 4 + 4 * DATA_RPT_SAMPLE_SIZE * 2)
+                if self.serial_port_data.in_waiting >= (4 + 4 + 4 * DATA_RPT_SAMPLE_SIZE * 2):
+                    data = self.serial_port_data.read(4 + 4 + 4 * DATA_RPT_SAMPLE_SIZE * 2)
 
                     # Unpack the received data
                     sign, package_id = struct.unpack('<II', data[:8])

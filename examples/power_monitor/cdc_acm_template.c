@@ -9,9 +9,13 @@
 #include "ina229.h"
 
 /*!< endpoint address */
-#define CDC_IN_EP  0x81
-#define CDC_OUT_EP 0x02
-#define CDC_INT_EP 0x83
+#define CDC1_IN_EP  0x81  // IN Endpoint for CDC1
+#define CDC1_OUT_EP 0x02  // OUT Endpoint for CDC1
+#define CDC1_INT_EP 0x83  // Interrupt IN Endpoint for CDC1
+
+#define CDC2_IN_EP  0x84  // IN Endpoint for CDC2
+#define CDC2_OUT_EP 0x05  // OUT Endpoint for CDC2
+#define CDC2_INT_EP 0x86  // Interrupt IN Endpoint for CDC2
 
 #define USBD_VID           0x0815
 #define USBD_PID           0x2024
@@ -19,7 +23,7 @@
 #define USBD_LANGID_STRING 1033
 
 /*!< config descriptor size */
-#define USB_CONFIG_SIZE (9 + CDC_ACM_DESCRIPTOR_LEN)
+#define USB_CONFIG_SIZE (9 + CDC_ACM_DESCRIPTOR_LEN + CDC_ACM_DESCRIPTOR_LEN)
 
 #ifdef CONFIG_USB_HS
 #define CDC_MAX_MPS 512
@@ -30,8 +34,14 @@
 /*!< global descriptor */
 static const uint8_t cdc_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0xEF, 0x02, 0x01, USBD_VID, USBD_PID, 0x0100, 0x01),
-    USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    CDC_ACM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, 0x02),
+    USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x04, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+
+    // First CDC ACM Interface
+    CDC_ACM_DESCRIPTOR_INIT(0x00, CDC1_INT_EP, CDC1_OUT_EP, CDC1_IN_EP, CDC_MAX_MPS, 0x02),
+
+    // Second CDC ACM Interface
+    CDC_ACM_DESCRIPTOR_INIT(0x02, CDC2_INT_EP, CDC2_OUT_EP, CDC2_IN_EP, CDC_MAX_MPS, 0x02),
+
     ///////////////////////////////////////
     /// string0 descriptor
     ///////////////////////////////////////
@@ -103,11 +113,11 @@ static const uint8_t cdc_descriptor[] = {
 #define DATA_RPT_BUFF_SIZE (sizeof(ina229_data_report_t))
 #define RD_BUFF_SIZE       (256)
 
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[RD_BUFF_SIZE];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[WR_BUFF_SIZE];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer1[RD_BUFF_SIZE];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer1[WR_BUFF_SIZE];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t data_rpt_buffer[DATA_RPT_BUFF_SIZE];
 
-volatile uint8_t *p_wr_buf = &write_buffer[0];
+volatile uint8_t *p_wr_buf = &write_buffer1[0];
 volatile uint8_t *p_data_rpt_buf = &data_rpt_buffer[0];
 volatile bool ep_tx_busy_flag = false;
 
@@ -132,7 +142,7 @@ void usbd_event_handler(uint8_t event)
             break;
         case USBD_EVENT_CONFIGURED:
             /* setup first out ep read transfer */
-            usbd_ep_start_read(CDC_OUT_EP, read_buffer, RD_BUFF_SIZE);
+            usbd_ep_start_read(CDC1_OUT_EP, read_buffer1, RD_BUFF_SIZE);
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
@@ -144,58 +154,80 @@ void usbd_event_handler(uint8_t event)
     }
 }
 
-void usbd_cdc_acm_bulk_out(uint8_t ep, uint32_t nbytes)
+void usbd_cdc1_acm_bulk_in(uint8_t ep, uint32_t nbytes)
 {
-    //printf("actual out len:%d\r\n", nbytes);
-
-    //for (int i = 0; i < nbytes; i++) {
-    //     printf("%02x ", read_buffer[i]);
-    //}
-    //printf("\r\n");
-
-    /* command processing */
-    cmd_process(read_buffer, nbytes);
-
-    /* setup next out ep read transfer */
-    usbd_ep_start_read(CDC_OUT_EP, read_buffer, RD_BUFF_SIZE);
-}
-
-void usbd_cdc_acm_bulk_in(uint8_t ep, uint32_t nbytes)
-{
-    //USB_LOG_RAW("actual in len:%d\r\n", nbytes);
-
     if ((nbytes % CDC_MAX_MPS) == 0 && nbytes) {
-        /* send zlp */
-        usbd_ep_start_write(CDC_IN_EP, NULL, 0);
+        usbd_ep_start_write(CDC1_IN_EP, NULL, 0);  // Send ZLP if required
     } else {
         ep_tx_busy_flag = false;
     }
 }
 
+void usbd_cdc2_acm_bulk_in(uint8_t ep, uint32_t nbytes)
+{
+    if ((nbytes % CDC_MAX_MPS) == 0 && nbytes) {
+        usbd_ep_start_write(CDC2_IN_EP, NULL, 0);  // Send ZLP if required
+    } else {
+        ep_tx_busy_flag = false;
+    }
+}
+
+void usbd_cdc1_acm_bulk_out(uint8_t ep, uint32_t nbytes)
+{
+    cmd_process(read_buffer1, nbytes);
+    usbd_ep_start_read(CDC1_OUT_EP, read_buffer1, RD_BUFF_SIZE);
+}
+
+void usbd_cdc2_acm_bulk_out(uint8_t ep, uint32_t nbytes)
+{
+    /* not used */
+}
+
 /*!< endpoint call back */
-struct usbd_endpoint cdc_out_ep = {
-    .ep_addr = CDC_OUT_EP,
-    .ep_cb = usbd_cdc_acm_bulk_out
+struct usbd_endpoint cdc1_in_ep = {
+    .ep_addr = CDC1_IN_EP,
+    .ep_cb = usbd_cdc1_acm_bulk_in
 };
 
-struct usbd_endpoint cdc_in_ep = {
-    .ep_addr = CDC_IN_EP,
-    .ep_cb = usbd_cdc_acm_bulk_in
+struct usbd_endpoint cdc1_out_ep = {
+    .ep_addr = CDC1_OUT_EP,
+    .ep_cb = usbd_cdc1_acm_bulk_out
 };
 
-struct usbd_interface intf0;
-struct usbd_interface intf1;
+struct usbd_endpoint cdc2_in_ep = {
+    .ep_addr = CDC2_IN_EP,
+    .ep_cb = usbd_cdc2_acm_bulk_in
+};
+
+struct usbd_endpoint cdc2_out_ep = {
+    .ep_addr = CDC2_OUT_EP,
+    .ep_cb = usbd_cdc2_acm_bulk_out
+};
+
+struct usbd_interface intf11;
+struct usbd_interface intf12;
+struct usbd_interface intf21;
+struct usbd_interface intf22;
 
 void cdc_acm_init(void)
 {
-    memset(&write_buffer[0], 0, WR_BUFF_SIZE);
-    memset(&read_buffer[0],  0, RD_BUFF_SIZE);
+    memset(&write_buffer1[0], 0, WR_BUFF_SIZE);
+    memset(&read_buffer1[0],  0, RD_BUFF_SIZE);
 
     usbd_desc_register(cdc_descriptor);
-    usbd_add_interface(usbd_cdc_acm_init_intf(&intf0));
-    usbd_add_interface(usbd_cdc_acm_init_intf(&intf1));
-    usbd_add_endpoint(&cdc_out_ep);
-    usbd_add_endpoint(&cdc_in_ep);
+
+    // Register the first CDC interface
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf11));
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf12));
+    usbd_add_endpoint(&cdc1_in_ep);
+    usbd_add_endpoint(&cdc1_out_ep);
+
+    // Register the second CDC interface
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf21));
+    usbd_add_interface(usbd_cdc_acm_init_intf(&intf22));
+    usbd_add_endpoint(&cdc2_in_ep);
+    usbd_add_endpoint(&cdc2_out_ep);
+
     usbd_initialize();
 }
 
@@ -214,7 +246,7 @@ void cdc_acm_data_send_with_dtr_test(void)
 {
     if (dtr_enable) {
         ep_tx_busy_flag = true;
-        usbd_ep_start_write(CDC_IN_EP, write_buffer, WR_BUFF_SIZE);
+        usbd_ep_start_write(CDC1_IN_EP, write_buffer1, WR_BUFF_SIZE);
         while (ep_tx_busy_flag) {
         }
     }
@@ -222,12 +254,12 @@ void cdc_acm_data_send_with_dtr_test(void)
 
 void cdc_acm_cmd_response_send(void)
 {
-    usbd_ep_start_write(CDC_IN_EP, write_buffer, WR_BUFF_SIZE);
+    usbd_ep_start_write(CDC1_IN_EP, write_buffer1, WR_BUFF_SIZE);
 }
 
 void cdc_acm_data_rpt_send(void)
 {
-    usbd_ep_start_write(CDC_IN_EP, data_rpt_buffer, DATA_RPT_BUFF_SIZE);
+    usbd_ep_start_write(CDC2_IN_EP, data_rpt_buffer, DATA_RPT_BUFF_SIZE);
 }
 
 void cdc_acm_prints(char *str)
@@ -236,7 +268,7 @@ void cdc_acm_prints(char *str)
 
     if (dtr_enable) {
         ep_tx_busy_flag = true;
-        usbd_ep_start_write(CDC_IN_EP, (uint8_t*)str, len);
+        usbd_ep_start_write(CDC1_IN_EP, (uint8_t*)str, len);
         while (ep_tx_busy_flag) {
         }
     }

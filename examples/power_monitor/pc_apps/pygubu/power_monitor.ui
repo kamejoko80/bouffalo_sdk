@@ -64,14 +64,14 @@
           </object>
         </child>
         <child>
-          <object class="ttk.Entry" id="entry_port" named="True">
+          <object class="ttk.Entry" id="entry_port_cmd" named="True">
             <property name="justify">right</property>
-            <property name="text" translatable="yes">COM22</property>
+            <property name="text" translatable="yes">COM13</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">30</property>
-              <property name="width">80</property>
-              <property name="x">80</property>
+              <property name="width">50</property>
+              <property name="x">67</property>
               <property name="y">10</property>
             </layout>
           </object>
@@ -83,8 +83,8 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">30</property>
-              <property name="width">100</property>
-              <property name="x">220</property>
+              <property name="width">50</property>
+              <property name="x">270</property>
               <property name="y">10</property>
             </layout>
           </object>
@@ -92,10 +92,10 @@
         <child>
           <object class="ttk.Label" id="label_port" named="True">
             <property name="justify">left</property>
-            <property name="text" translatable="yes">Port</property>
+            <property name="text" translatable="yes">Port Cmd</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="x">40</property>
+              <property name="x">10</property>
               <property name="y">15</property>
             </layout>
           </object>
@@ -106,7 +106,7 @@
             <property name="text" translatable="yes">Baud</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="x">180</property>
+              <property name="x">233</property>
               <property name="y">15</property>
             </layout>
           </object>
@@ -593,6 +593,30 @@
               <property name="anchor">nw</property>
               <property name="x">1205</property>
               <property name="y">15</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label_port_data" named="True">
+            <property name="justify">left</property>
+            <property name="text" translatable="yes">Port Data</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">123</property>
+              <property name="y">15</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="entry_port_data" named="True">
+            <property name="justify">right</property>
+            <property name="text" translatable="yes">COM14</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="width">50</property>
+              <property name="x">178</property>
+              <property name="y">10</property>
             </layout>
           </object>
         </child>
