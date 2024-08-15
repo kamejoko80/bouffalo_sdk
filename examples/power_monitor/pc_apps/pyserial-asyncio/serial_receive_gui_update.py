@@ -1,3 +1,6 @@
+#
+# Reference: https://stackoverflow.com/questions/70625801/threading-reading-a-serial-port-in-python-with-a-gui
+#
 import tkinter as tk
 
 from serial import Serial
