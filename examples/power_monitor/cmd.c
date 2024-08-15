@@ -21,6 +21,8 @@ extern ina229_config_t ina229_config;
 extern ina229_lsb_param_t ina229_lsb;
 
 extern void cdc_acm_cmd_response_send(void);
+extern void status_led_on(void);
+extern void status_led_off(void);
 
 bool check_ina229_config_param(cmd_t *p_cmd)
 {
@@ -123,12 +125,14 @@ void cmd_process(uint8_t *cmd_buff, uint32_t len)
             if(p_cmd->param_1 == 0x01)
             {
                 printf("CMD set bat sim voltage output on\r\n");
+                status_led_on();
                 tca9534_pin_control(BAT_SIM_ENA, 1);
                 resp->result = 1;
             }
             else if (p_cmd->param_1 == 0x00)
             {
                 printf("CMD set bat sim voltage output off\r\n");
+                status_led_off();
                 tca9534_pin_control(BAT_SIM_ENA, 0);
                 resp->result = 1;
             }

@@ -43,6 +43,16 @@ void gpio_init(void)
     bflb_gpio_init(gpio, GPIO_PIN_17, GPIO_FUNC_I2C0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
 }
 
+void status_led_on(void)
+{
+    bflb_gpio_reset(gpio, GPIO_LED);    
+}
+
+void status_led_off(void)
+{
+    bflb_gpio_set(gpio, GPIO_LED);    
+}
+
 int main(void)
 {
     board_init();
@@ -57,8 +67,6 @@ int main(void)
     cdc_acm_init();
 
     printf("Start program...\r\n");
-    bflb_gpio_reset(gpio, GPIO_LED);
-
     printf("Power on FPGA\r\n");
     gowin_power_off();
     gowin_power_on();
@@ -86,12 +94,12 @@ int main(void)
             for(int i = 0; i < 3; i++)
             {
                 bflb_mtimer_delay_ms(500);
-                bflb_gpio_reset(gpio, GPIO_LED);
+                status_led_on();
                 bflb_mtimer_delay_ms(500);
-                bflb_gpio_set(gpio, GPIO_LED);
+                status_led_off();
             }
 
-            bflb_gpio_reset(gpio, GPIO_LED);
+            status_led_on();
             printf("System reset!\r\n");
             GLB_SW_System_Reset();
         }
