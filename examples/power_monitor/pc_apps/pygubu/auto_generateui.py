@@ -22,6 +22,36 @@ class auto_generateUI:
     def run(self):
         self.mainwindow.mainloop()
 
+    def connect(self):
+        pass
+
+    def disconnect(self):
+        pass
+
+    def send_data(self):
+        pass
+
+    def execute_adc_configuration(self):
+        pass
+
+    def on_scale_change(self, scale_value):
+        pass
+
+    def on_set_vbat_value(self):
+        pass
+
+    def execute_start_measuring(self):
+        pass
+
+    def execute_stop_measuring(self):
+        pass
+
+    def clear_output(self):
+        pass
+
+    def close(self):
+        pass
+
 
 if __name__ == "__main__":
     app = auto_generateUI()

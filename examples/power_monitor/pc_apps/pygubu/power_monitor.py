@@ -87,6 +87,8 @@ class auto_generateUI:
         self.scale_vbat = self.builder.get_object('scale_voltage_out', master)
         self.entry_vbat = self.builder.get_object('entry_vbat_value', master)
         self.checkbt_vbat_ena = self.builder.get_object('checkbutton_vbat_enable', master)
+        self.entry_min = self.builder.get_object('entry_min', master)
+        self.entry_max = self.builder.get_object('entry_max', master)
 
         # Set default vbat output disable and register callback function
         self.check_var = tk.BooleanVar(value=False)  # Default to unchecked
@@ -418,13 +420,27 @@ class auto_generateUI:
 
         if len(selected_data) > 0:
             avg_current = np.mean(selected_data)
+            min_current = np.min(selected_data)
+            max_current = np.max(selected_data)
         else:
             avg_current = 0  # Or another appropriate value
+            min_current = 0
+            max_current = 0
 
         self.avg_current_entry.config(state=tk.NORMAL)
         self.avg_current_entry.delete(0, tk.END)
         self.avg_current_entry.insert(0, f"{avg_current:.2f}")
         self.avg_current_entry.config(state="readonly")
+
+        self.entry_min.config(state=tk.NORMAL)
+        self.entry_min.delete(0, tk.END)
+        self.entry_min.insert(0, f"{min_current:.2f}")
+        self.entry_min.config(state="readonly")
+
+        self.entry_max.config(state=tk.NORMAL)
+        self.entry_max.delete(0, tk.END)
+        self.entry_max.insert(0, f"{max_current:.2f}")
+        self.entry_max.config(state="readonly")
 
     def execute_stop_measuring(self):
         cmd = bytearray()

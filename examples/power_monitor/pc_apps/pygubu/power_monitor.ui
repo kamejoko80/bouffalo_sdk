@@ -495,7 +495,7 @@
           </object>
         </child>
         <child>
-          <object class="ttk.Entry" id="entry_max" named="True">
+          <object class="ttk.Entry" id="entry_min" named="True">
             <property name="justify">right</property>
             <layout manager="place">
               <property name="anchor">nw</property>
@@ -507,7 +507,7 @@
           </object>
         </child>
         <child>
-          <object class="ttk.Entry" id="entry_min" named="True">
+          <object class="ttk.Entry" id="entry_max" named="True">
             <property name="justify">right</property>
             <layout manager="place">
               <property name="anchor">nw</property>
