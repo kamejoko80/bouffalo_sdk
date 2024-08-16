@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import queue
 import time
 import serial
 import binascii
@@ -23,6 +24,8 @@ MAX_DATA_SIZE = 100000     # Maximum number of samples for zoom-out
 DAC_VCC = 4.75             # DAC VCC power supply voltage
 DATA_MAX_4P2 = 3622        # DATA_MAX_4P2 = 4096 * 4.2 / DAC_VCC
 DATA_3P8 = 3350            # Default VBAT output = 3.8V
+
+WAVEFORM_UPDATE_INTERVAL = 50 # In milisecon
 
 conversion_times = {
     "280uS": 0x3,
@@ -62,6 +65,8 @@ class auto_generateUI:
         self.receive_thread = None
         self.current_data = np.array([])  # Store received current data here
         self.voltage_data = np.array([])  # Store received voltage data here
+        self.data_queue_voltage = queue.Queue()
+        self.data_queue_current = queue.Queue()
 
         self.builder = pygubu.Builder(
             on_first_object=on_first_object_cb)
@@ -164,6 +169,8 @@ class auto_generateUI:
         self.canvas1.mpl_connect('scroll_event', self.on_scroll)
         # Update the waveform and markers
         self.update_current_waveform(self.current_data)
+        # Schedule voltage/current update waveform
+        self.mainwindow.after(WAVEFORM_UPDATE_INTERVAL, self.update_waveform)
 
     def update_optionmenu_convtime_items(self):
         menu = self.optionmenu_convtime['menu']
@@ -390,7 +397,7 @@ class auto_generateUI:
         self.ax1.set_xlim(new_xlim)
         self.canvas1.draw()
 
-    def update_volatge_waveform(self, voltage_data):
+    def update_voltage_waveform(self, voltage_data):
         self.ax2.clear()
 
         # Plot only the last MAX_DATA_SIZE samples if the data size exceeds it
@@ -604,35 +611,41 @@ class auto_generateUI:
                     if sign == SIGNATURE:
                         voltage_data = struct.unpack('<' + 'i' * DATA_RPT_SAMPLE_SIZE, data[8:8 + 4 * DATA_RPT_SAMPLE_SIZE])
                         current_data = struct.unpack('<' + 'i' * DATA_RPT_SAMPLE_SIZE, data[8 + 4 * DATA_RPT_SAMPLE_SIZE:])
-
-                        # Append to existing data for a smooth waveform
-                        self.current_data = np.append(self.current_data, current_data)
-                        if len(self.current_data) > MAX_DATA_SIZE:  # Limit the size to MAX_DATA_SIZE samples for display
-                            self.current_data = self.current_data[-MAX_DATA_SIZE:]
-
-                        # Append to existing data for a smooth waveform
-                        self.voltage_data = np.append(self.voltage_data, voltage_data)
-                        if len(self.voltage_data) > MAX_DATA_SIZE:  # Limit the size to MAX_DATA_SIZE samples for display
-                            self.voltage_data = self.voltage_data[-MAX_DATA_SIZE:]
-
-                        # Update current waveform
-                        self.update_current_waveform(self.current_data)
-
-                        # Update volatge waveform
-                        self.update_volatge_waveform(self.voltage_data)
-
-                        #self.output_text.insert(tk.END, f"Package ID: {package_id}\n")
-                        #self.output_text.insert(tk.END, f"Current (mA): {current_data[:5]}...\n")  # Display first 5 values as a preview
-                        #self.output_text.see(tk.END)
+                        #print(f"Voltage: {voltage}\nCurrent: {current}")  # Debug output
+                        self.data_queue_voltage.put(voltage_data)
+                        self.data_queue_current.put(current_data)
             except Exception as e:
                 self.is_receiving = False
-                #messagebox.showerror("Error", str(e))
                 break
 
+            time.sleep(0.1)
+
+    def update_waveform(self):
+        # Voltage data dequeue processing
+        try:
+            while True:
+                voltage_data = self.data_queue_voltage.get_nowait()
+                self.voltage_data = np.append(self.voltage_data, voltage_data)
+                if len(self.voltage_data) > MAX_DATA_SIZE:
+                    self.voltage_data = self.voltage_data[-MAX_DATA_SIZE:]
+                self.update_voltage_waveform(self.voltage_data)
+        except queue.Empty:
+            pass
+        # Current data dequeue processing
+        try:
+            while True:
+                current_data = self.data_queue_current.get_nowait()
+                self.current_data = np.append(self.current_data, current_data)
+                if len(self.current_data) > MAX_DATA_SIZE:
+                    self.current_data = self.current_data[-MAX_DATA_SIZE:]
+                self.update_current_waveform(self.current_data)
+        except queue.Empty:
+            pass
+
+        self.mainwindow.after(WAVEFORM_UPDATE_INTERVAL, self.update_waveform)
 
     def run(self):
         self.mainwindow.mainloop()
-
 
 if __name__ == "__main__":
     app = auto_generateUI()
