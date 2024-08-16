@@ -560,9 +560,13 @@ class auto_generateUI:
         if self.receive_thread:
             self.receive_thread.join()
         if self.serial_port_cmd and self.serial_port_cmd.is_open:
+            self.serial_port_cmd.flushInput()
+            self.serial_port_cmd.flushOutput()
             self.serial_port_cmd.close()
             # messagebox.showinfo("Disconnection", "Disconnected from the UART cmd port")
         if self.serial_port_data and self.serial_port_data.is_open:
+            self.serial_port_data.flushInput()
+            self.serial_port_data.flushOutput()
             self.serial_port_data.close()
             # messagebox.showinfo("Disconnection", "Disconnected from the UART data port")
 
