@@ -424,10 +424,10 @@ class auto_generateUI:
 
         # Plot only the last MAX_DATA_SIZE samples if the data size exceeds it
         if len(current_data) > MAX_DATA_SIZE:
-            self.ax1.plot(current_data[-MAX_DATA_SIZE:])
+            self.ax1.plot(current_data[-MAX_DATA_SIZE:], color = "green")
             self.original_xlim = [0, MAX_DATA_SIZE]
         else:
-            self.ax1.plot(current_data)
+            self.ax1.plot(current_data, color = "green")
             self.original_xlim = [0, len(current_data)]
 
         # Re-add the markers after plotting the waveform
@@ -461,7 +461,7 @@ class auto_generateUI:
 
     def update_voltage_waveform(self, voltage_data):
         self.ax2.clear()
-        self.ax2.plot(voltage_data)
+        self.ax2.plot(voltage_data, color = "orange")
         self.ax1.set_title("Volatge Waveform (V)")
         self.ax1.set_xlabel("Sample")
         self.ax1.set_ylabel("Voltage (mA)")
