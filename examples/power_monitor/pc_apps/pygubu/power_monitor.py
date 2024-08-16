@@ -1,4 +1,12 @@
 #!/usr/bin/python3
+#
+# Copyright (C) 2024 Hery Dang (henrydang@mijoconnected.com)
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+import os
+import json
 import queue
 import time
 import serial
@@ -51,6 +59,33 @@ adc_range = {
     "RANGE_1"  : 0x01
 }
 
+# File path for settings.ini
+file_path = "settings.ini"
+
+# Default settings
+default_settings = {
+    "serial_port_cmd": "COM13",
+    "serial_port_data": "COM14",
+    "baudrate": "10000000"
+}
+
+# API to read and write specific key values
+class SettingsManager:
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def read_value(self, key):
+        with open(self.file_path, "r") as file:
+            settings = json.load(file)
+        return settings.get(key)
+
+    def write_value(self, key, value):
+        with open(self.file_path, "r") as file:
+            settings = json.load(file)
+        settings[key] = value
+        with open(self.file_path, "w") as file:
+            json.dump(settings, file, indent=4)
+
 class auto_generateUI:
     def __init__(self, master=None, on_first_object_cb=None):
         # Initialize the stack to keep track of xlim history
@@ -96,6 +131,17 @@ class auto_generateUI:
         self.checkbt_vbat_ena = self.builder.get_object('checkbutton_vbat_enable', master)
         self.entry_min = self.builder.get_object('entry_min', master)
         self.entry_max = self.builder.get_object('entry_max', master)
+
+        # Check if the settings file exists, if not, create it with default values
+        if not os.path.exists(file_path):
+            with open(file_path, "w") as file:
+                json.dump(default_settings, file, indent=4)
+
+        # Get port and baudrate from settings.ini
+        self.settings_manager = SettingsManager(file_path)
+
+        # Load the settings
+        self.load_settings()
 
         # Set default vbat output disable and register callback function
         self.check_var = tk.BooleanVar(value=False)  # Default to unchecked
@@ -171,6 +217,22 @@ class auto_generateUI:
         self.update_current_waveform(self.current_data)
         # Schedule voltage/current update waveform
         self.mainwindow.after(WAVEFORM_UPDATE_INTERVAL, self.update_waveform)
+
+    def load_settings(self):
+        self.entry_port_cmd.config(state=tk.NORMAL)
+        self.entry_port_cmd.delete(0, tk.END)
+        self.entry_port_cmd.insert(0, self.settings_manager.read_value("serial_port_cmd"))
+        self.entry_port_data.config(state=tk.NORMAL)
+        self.entry_port_data.delete(0, tk.END)
+        self.entry_port_data.insert(0, self.settings_manager.read_value("serial_port_data"))
+        self.baudrate_entry.config(state=tk.NORMAL)
+        self.baudrate_entry.delete(0, tk.END)
+        self.baudrate_entry.insert(0, self.settings_manager.read_value("baudrate"))
+
+    def store_settings(self):
+        self.settings_manager.write_value("serial_port_cmd", self.entry_port_cmd.get())
+        self.settings_manager.write_value("serial_port_data", self.entry_port_data.get())
+        self.settings_manager.write_value("baudrate", self.baudrate_entry.get())
 
     def update_optionmenu_convtime_items(self):
         menu = self.optionmenu_convtime['menu']
@@ -581,6 +643,7 @@ class auto_generateUI:
         self.output_text.delete('1.0', tk.END)
 
     def close(self):
+        self.store_settings()
         self.disconnect()
         self.mainwindow.destroy()
 
