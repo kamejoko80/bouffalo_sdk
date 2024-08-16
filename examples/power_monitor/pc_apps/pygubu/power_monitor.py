@@ -624,6 +624,11 @@ class Power_Monitor:
 
         self.output_text.see(tk.END)
 
+    def execute_settings_configuration(self):
+        self.execute_adc_configuration()
+        self.on_set_vbat_value()
+        self.on_change_vbat_enable()
+
     def connect(self):
         port_cmd = self.entry_port_cmd.get()
         port_data = self.entry_port_data.get()
@@ -631,6 +636,9 @@ class Power_Monitor:
         try:
             self.serial_port_cmd = serial.Serial(port_cmd, baudrate=int(baudrate), timeout=1)
             self.serial_port_data = serial.Serial(port_data, baudrate=int(baudrate), timeout=1)
+            # Configure ADC/VBAT following the previous settings
+            self.execute_settings_configuration()
+
             # messagebox.showinfo("Connection", f"Connected to {port_cmd} at {baudrate} baud")
             self.is_receiving = True
             self.receive_thread = threading.Thread(target=self.receive_data)
