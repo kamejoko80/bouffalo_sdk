@@ -28,12 +28,12 @@ RESOURCE_PATHS = [PROJECT_PATH]
 # Constants
 SIGNATURE = 0x87654321
 DATA_RPT_SAMPLE_SIZE = 63  # The size of the current and voltage arrays
-MAX_DATA_SIZE = 100000     # Maximum number of samples for zoom-out
+MAX_DATA_SIZE = 20000      # Maximum number of samples for zoom-out
 DAC_VCC = 4.75             # DAC VCC power supply voltage
 DATA_MAX_4P2 = 3622        # DATA_MAX_4P2 = 4096 * 4.2 / DAC_VCC
 DATA_3P8 = 3350            # Default VBAT output = 3.8V
 
-WAVEFORM_UPDATE_INTERVAL = 50 # In milisecon
+WAVEFORM_UPDATE_INTERVAL = 4 # In milisecon
 
 conversion_times = {
     "280uS": 0x3,
@@ -461,13 +461,7 @@ class auto_generateUI:
 
     def update_voltage_waveform(self, voltage_data):
         self.ax2.clear()
-
-        # Plot only the last MAX_DATA_SIZE samples if the data size exceeds it
-        if len(voltage_data) > MAX_DATA_SIZE:
-            self.ax2.plot(voltage_data[-MAX_DATA_SIZE:])
-        else:
-            self.ax2.plot(voltage_data)
-
+        self.ax2.plot(voltage_data)
         self.ax1.set_title("Volatge Waveform (V)")
         self.ax1.set_xlabel("Sample")
         self.ax1.set_ylabel("Voltage (mA)")
