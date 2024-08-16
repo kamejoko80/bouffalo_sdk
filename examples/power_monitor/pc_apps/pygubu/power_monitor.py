@@ -64,9 +64,14 @@ file_path = "settings.ini"
 
 # Default settings
 default_settings = {
-    "serial_port_cmd": "COM13",
+    "serial_port_cmd":  "COM13",
     "serial_port_data": "COM14",
-    "baudrate": "10000000"
+    "baudrate":         "10000000",
+    "conversion_times": "280uS",
+    "average_num":      "AVG_NUM_1",
+    "adc_range":        "RANGE_0",
+    "vbat":             "1927",
+    "vbat_ena":         "False"
 }
 
 # API to read and write specific key values
@@ -86,7 +91,7 @@ class SettingsManager:
         with open(self.file_path, "w") as file:
             json.dump(settings, file, indent=4)
 
-class auto_generateUI:
+class Power_Monitor:
     def __init__(self, master=None, on_first_object_cb=None):
         # Initialize the stack to keep track of xlim history
         self.xlim_stack = []
@@ -143,38 +148,6 @@ class auto_generateUI:
         # Load the settings
         self.load_settings()
 
-        # Set default vbat output disable and register callback function
-        self.check_var = tk.BooleanVar(value=False)  # Default to unchecked
-        self.checkbt_vbat_ena.config(variable=self.check_var, onvalue=True, offvalue=False)
-        self.check_var.trace_add("write", self.on_change_vbat_enable)
-
-        # Configure VBAT min/max output and default value
-        self.scale_vbat.configure(from_=0, to=DATA_MAX_4P2)
-        self.scale_vbat.set(DATA_3P8)
-        int_value = int(float(self.scale_vbat.get()))
-        vbat_voltage = (DAC_VCC * int_value) / 4096
-        self.entry_vbat.config(state=tk.NORMAL)
-        self.entry_vbat.delete(0, tk.END)
-        self.entry_vbat.insert(0, f"{vbat_voltage:.2f}")
-
-        # Process conversion time drop-down list
-        self.selected_convtime_key = tk.StringVar(master)
-        self.selected_convtime_key.set(next(iter(conversion_times.keys())))  # Set default value
-        self.update_optionmenu_convtime_items()
-        self.optionmenu_convtime['textvariable'] = self.selected_convtime_key
-
-        # Process average num drop-down list
-        self.selected_avgnum_key = tk.StringVar(master)
-        self.selected_avgnum_key.set(next(iter(average_num.keys())))  # Set default value
-        self.update_optionmenu_avgnum_items()
-        self.optionmenu_avgnum['textvariable'] = self.selected_avgnum_key
-
-        # Process adc range drop-down list
-        self.selected_adcrange_key = tk.StringVar(master)
-        self.selected_adcrange_key.set(next(iter(adc_range.keys())))  # Set default value
-        self.update_optionmenu_adcrange_items()
-        self.optionmenu_adcrange['textvariable'] = self.selected_adcrange_key
-
         # Link scrollbars
         self.vscroll = self.builder.get_object('scrollbar_vertical', master)
         self.hscroll = self.builder.get_object('scrollbar_horizontal', master)
@@ -217,8 +190,11 @@ class auto_generateUI:
         self.update_current_waveform(self.current_data)
         # Schedule voltage/current update waveform
         self.mainwindow.after(WAVEFORM_UPDATE_INTERVAL, self.update_waveform)
+        # Bind the close event to the custom close method
+        self.mainwindow.protocol("WM_DELETE_WINDOW", self.close)
 
     def load_settings(self):
+        # Connection settings
         self.entry_port_cmd.config(state=tk.NORMAL)
         self.entry_port_cmd.delete(0, tk.END)
         self.entry_port_cmd.insert(0, self.settings_manager.read_value("serial_port_cmd"))
@@ -229,10 +205,54 @@ class auto_generateUI:
         self.baudrate_entry.delete(0, tk.END)
         self.baudrate_entry.insert(0, self.settings_manager.read_value("baudrate"))
 
+        # Load conversion time drop-down list
+        self.selected_convtime_key = tk.StringVar(None)
+        self.selected_convtime_key.set(self.settings_manager.read_value("conversion_times"))
+        self.update_optionmenu_convtime_items()
+        self.optionmenu_convtime['textvariable'] = self.selected_convtime_key
+
+        # Load average num drop-down list
+        self.selected_avgnum_key = tk.StringVar(None)
+        self.selected_avgnum_key.set(self.settings_manager.read_value("average_num"))
+        self.update_optionmenu_avgnum_items()
+        self.optionmenu_avgnum['textvariable'] = self.selected_avgnum_key
+
+        # Load adc range drop-down list
+        self.selected_adcrange_key = tk.StringVar(None)
+        self.selected_adcrange_key.set(self.settings_manager.read_value("adc_range"))
+        self.update_optionmenu_adcrange_items()
+        self.optionmenu_adcrange['textvariable'] = self.selected_adcrange_key
+
+        # Load VBAT settings
+        self.scale_vbat.configure(from_=0, to=DATA_MAX_4P2)
+        self.scale_vbat.set(int(self.settings_manager.read_value("vbat")))
+        int_value = int(float(self.scale_vbat.get()))
+        vbat_voltage = (DAC_VCC * int_value) / 4096
+        self.entry_vbat.config(state=tk.NORMAL)
+        self.entry_vbat.delete(0, tk.END)
+        self.entry_vbat.insert(0, f"{vbat_voltage:.2f}")
+
+        # Load VBAT output enable
+        self.check_var = tk.BooleanVar()
+        if self.settings_manager.read_value("vbat_ena") == "True":
+            self.check_var.set(True)
+        else:
+            self.check_var.set(False)
+        self.checkbt_vbat_ena.config(variable=self.check_var, onvalue=True, offvalue=False)
+        self.check_var.trace_add("write", self.on_change_vbat_enable)
+
     def store_settings(self):
         self.settings_manager.write_value("serial_port_cmd", self.entry_port_cmd.get())
         self.settings_manager.write_value("serial_port_data", self.entry_port_data.get())
         self.settings_manager.write_value("baudrate", self.baudrate_entry.get())
+        self.settings_manager.write_value("conversion_times", self.selected_convtime_key.get())
+        self.settings_manager.write_value("average_num", self.selected_avgnum_key.get())
+        self.settings_manager.write_value("adc_range", self.selected_adcrange_key.get())
+        self.settings_manager.write_value("vbat", str(int(float(self.scale_vbat.get()))))
+        if self.check_var.get():
+            self.settings_manager.write_value("vbat_ena", "True")
+        else:
+            self.settings_manager.write_value("vbat_ena", "False")
 
     def update_optionmenu_convtime_items(self):
         menu = self.optionmenu_convtime['menu']
@@ -705,5 +725,5 @@ class auto_generateUI:
         self.mainwindow.mainloop()
 
 if __name__ == "__main__":
-    app = auto_generateUI()
+    app = Power_Monitor()
     app.run()
