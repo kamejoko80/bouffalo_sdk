@@ -664,6 +664,15 @@ class Power_Monitor:
     def clear_output(self):
         self.output_text.delete('1.0', tk.END)
 
+    def clear_waveform(self):
+        if self.is_measuring == False:
+            self.current_data = np.array([])
+            self.voltage_data = np.array([])
+            self.data_queue_voltage.queue.clear()
+            self.data_queue_current.queue.clear()
+            self.update_current_waveform(self.current_data)
+            self.update_voltage_waveform(self.voltage_data)
+
     def close(self):
         self.store_settings()
         self.disconnect()

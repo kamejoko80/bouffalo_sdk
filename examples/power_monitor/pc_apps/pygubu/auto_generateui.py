@@ -52,6 +52,9 @@ class auto_generateUI:
     def close(self):
         pass
 
+    def clear_waveform(self):
+        pass
+
 
 if __name__ == "__main__":
     app = auto_generateUI()

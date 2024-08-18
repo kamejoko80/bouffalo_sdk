@@ -425,7 +425,7 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">35</property>
-              <property name="width">150</property>
+              <property name="width">100</property>
               <property name="x">840</property>
               <property name="y">660</property>
             </layout>
@@ -438,8 +438,8 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">35</property>
-              <property name="width">150</property>
-              <property name="x">1040</property>
+              <property name="width">100</property>
+              <property name="x">950</property>
               <property name="y">660</property>
             </layout>
           </object>
@@ -451,7 +451,7 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">35</property>
-              <property name="width">150</property>
+              <property name="width">100</property>
               <property name="x">840</property>
               <property name="y">710</property>
             </layout>
@@ -464,8 +464,8 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">35</property>
-              <property name="width">150</property>
-              <property name="x">1040</property>
+              <property name="width">100</property>
+              <property name="x">1060</property>
               <property name="y">710</property>
             </layout>
           </object>
@@ -617,6 +617,19 @@
               <property name="width">50</property>
               <property name="x">178</property>
               <property name="y">10</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="button_clear_waveform" named="True">
+            <property name="command" type="command" cbtype="simple">clear_waveform</property>
+            <property name="text" translatable="yes">Clear Waveform</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">35</property>
+              <property name="width">100</property>
+              <property name="x">950</property>
+              <property name="y">710</property>
             </layout>
           </object>
         </child>
