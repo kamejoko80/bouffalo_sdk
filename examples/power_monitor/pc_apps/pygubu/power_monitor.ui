@@ -28,7 +28,7 @@
     <property name="overrideredirect">false</property>
     <property name="relief">flat</property>
     <property name="resizable">none</property>
-    <property name="title" translatable="yes">Power Monitor</property>
+    <property name="title" translatable="yes">PowerSim Pro</property>
     <property name="width">200</property>
     <child>
       <object class="ttk.Frame" id="frame_main" named="True">
