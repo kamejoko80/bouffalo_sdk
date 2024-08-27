@@ -460,7 +460,7 @@
         <child>
           <object class="ttk.Button" id="button_quick_application" named="True">
             <property name="command" type="command" cbtype="simple">close</property>
-            <property name="text" translatable="yes">Quick App</property>
+            <property name="text" translatable="yes">Quit</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">35</property>
