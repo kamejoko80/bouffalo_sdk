@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
- 
+
 #include "bflb_gpio.h"
 #include "bflb_i2c.h"
 #include "bflb_mtimer.h"
@@ -66,18 +66,18 @@ void tca9534_init(void)
 
     /* before port output configuration,
        set the default output value first
-       P7(NA)                = 0 // Not use -> set input
-       P6(NA)                = 0 // Not use -> set input
-       P5(25MHZ_ENA)         = 0 // Not use -> set input
-       P4(BAT_SIM_ENA)       = 0
-       P3(VOL_MEASURE_ENA_N) = 1
-       P2(FPGA_VCORE_ENA)    = 0
-       P1(FPGA_VDDIO_ENA_N)  = 1
-       P0(FPGA_MODE0)        = 0
+       P7(USB_VBUS_ENA)      = 0
+       P6(USB_DATA_ENA_N)    = 1
+       P5(FPGA_VDDIO_ENA_N)  = 1
+       P4(FPGA_VCORE_ENA)    = 0
+       P3(RELAY_B_2_FPGA_N)  = 1
+       P2(RELAY_A_2_FPGA_N)  = 1
+       P1(BAT_SIM_ENA)       = 0
+       P0(VOL_MEASURE_ENA_N) = 1
     */
 
-    tca9534_write_reg(O_PORT, 0x0A);
-    tca9534_write_reg(C_PORT, 0xE0);
+    tca9534_write_reg(O_PORT, 0x6D);
+    tca9534_write_reg(C_PORT, 0x00);
 
 /*  uint8_t value;
     value = tca9534_read_reg(0);
@@ -96,7 +96,12 @@ void tca9534_pin_control(power_ctrl_t ctrl, uint8_t set)
     value = tca9534_read_reg(O_PORT);
 
     /* check for inverted polorization */
-    if((ctrl == FPGA_VDDIO) || (ctrl == VOL_MEASURE))
+    if((ctrl == VOL_MEASURE) ||
+       (ctrl == RELAY_A_ENA) ||
+       (ctrl == RELAY_B_ENA) ||
+       (ctrl == FPGA_VDDIO) ||
+       (ctrl == USB_DATA_ENA)
+      )
     {
         if(set)
         {

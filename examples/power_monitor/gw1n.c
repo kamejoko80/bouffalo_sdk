@@ -53,14 +53,12 @@ void gowin_spi0_init(uint8_t baudmhz)
 
 void gowin_power_on(void)
 {
-    tca9534_pin_control(FPGA_MODE0, 1);
     tca9534_pin_control(FPGA_VCORE, 1);
     tca9534_pin_control(FPGA_VDDIO, 1);
 }
 
 void gowin_power_off(void)
-{
-    tca9534_pin_control(FPGA_MODE0, 0);     
+{    
     tca9534_pin_control(FPGA_VDDIO, 0);
     tca9534_pin_control(FPGA_VCORE, 0);       
 }

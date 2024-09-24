@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
- 
+
 #ifndef _TCA9534_H_
 #define _TCA9534_H_
 
@@ -15,12 +15,14 @@
 #define C_PORT 0x03 // Configuration
 
 typedef enum {
-    FPGA_MODE0 = 0,
-    FPGA_VDDIO,
-    FPGA_VCORE,
-    VOL_MEASURE,
-    BAT_SIM_ENA,
-    FPGA_OSC25M_ENA
+    VOL_MEASURE = 0, // inversion
+    BAT_SIM_ENA,     // non-inversion
+    RELAY_A_ENA,     // inversion
+    RELAY_B_ENA,     // inversion
+    FPGA_VCORE,      // non-inversion
+    FPGA_VDDIO,      // inversion
+    USB_DATA_ENA,    // inversion
+    USB_VBUS_ENA     // non-inversion
 } power_ctrl_t;
 
 void tca9534_init(void);
