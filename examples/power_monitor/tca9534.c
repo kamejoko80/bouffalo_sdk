@@ -66,14 +66,14 @@ void tca9534_init(void)
 
     /* before port output configuration,
        set the default output value first
-       P7(USB_VBUS_ENA)      = 0
-       P6(USB_DATA_ENA_N)    = 1
-       P5(FPGA_VDDIO_ENA_N)  = 1
-       P4(FPGA_VCORE_ENA)    = 0
-       P3(RELAY_B_2_FPGA_N)  = 1
-       P2(RELAY_A_2_FPGA_N)  = 1
-       P1(BAT_SIM_ENA)       = 0
        P0(VOL_MEASURE_ENA_N) = 1
+       P1(BAT_SIM_ENA)       = 0
+       P2(RELAY_A_2_FPGA_N)  = 1
+       P3(RELAY_B_2_FPGA_N)  = 1
+       P4(FPGA_VCORE_ENA)    = 0
+       P5(FPGA_VDDIO_ENA_N)  = 1
+       P6(USB_DATA_ENA_N)    = 1
+       P7(USB_VBUS_ENA)      = 0
     */
 
     tca9534_write_reg(O_PORT, 0x6D);
