@@ -51,10 +51,22 @@
  *  [0] 0x06      0x0/1      0x00        0x00         : Response
  * --------------------------------------------------------------------------------------------
  *  [0] 0x07      0x00       0x00        0x00         : Start measuring
- *                                                    : No response
+ *  [0] 0x07      0x0/1      0x00        0x00         : Response
  * --------------------------------------------------------------------------------------------
  *  [0] 0x08      0x00       0x00        0x00         : Stop measuring
- *                                                    : No response
+ *  [0] 0x08      0x0/1      0x00        0x00         : Response
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x09      0x01       0x00        0x00         : Set high current measurement
+ *  [0] 0x09      0x00       0x00        0x00         : Set low current measurement
+ *  [0] 0x09      0x0/1      0x00        0x00         : Response
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x0A      0x01       0x00        0x00         : Set USB VBUS SW on
+ *  [0] 0x0A      0x00       0x00        0x00         : Set USB VBUS SW off
+ *  [0] 0x0A      0x0/1      0x00        0x00         : Response
+ * --------------------------------------------------------------------------------------------
+ *  [0] 0x0B      0x01       0x00        0x00         : Set USB DATA SW on
+ *  [0] 0x0B      0x00       0x00        0x00         : Set USB DATA SW off
+ *  [0] 0x0B      0x0/1      0x00        0x00         : Response  
  * --------------------------------------------------------------------------------------------
  *  [0] sign[0]   sign[1]    sign[2]     sign[3]      : Data streaming report (LEN = 2048 bytes)
  *  [1] id[0]     id[1]      id[2]       id[3]        : ID low word
@@ -93,7 +105,10 @@ typedef enum {
     CMD_SET_BAT_SIM_VOLT   = 0x05,
     CMD_BAT_SIM_OUTPUT     = 0x06,
     CMD_START_MEASURE      = 0x07,
-    CMD_STOP_MEASURE       = 0x08
+    CMD_STOP_MEASURE       = 0x08,    
+    CMD_SET_CURRENT_RANGE  = 0x09,
+    CMD_SET_USB_VBUS_SW    = 0x0A,
+    CMD_SET_USB_DATA_SW    = 0x0B
 } cmd_code_t;
 
 void cmd_process(uint8_t *cmd_buff, uint32_t len);

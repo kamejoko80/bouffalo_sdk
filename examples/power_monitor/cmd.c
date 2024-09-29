@@ -154,6 +154,65 @@ void cmd_process(uint8_t *cmd_buff, uint32_t len)
             resp->result = 1;
             cdc_acm_cmd_response_send();
             break;
+        case CMD_SET_CURRENT_RANGE:
+            if(p_cmd->param_1 == 0x01)
+            {
+                printf("CMD set current range high\r\n");
+                tca9534_pin_control(RELAY_A_ENA, 0);
+                tca9534_pin_control(RELAY_B_ENA, 1);
+                resp->result = 1;
+            }
+            else if (p_cmd->param_1 == 0x00)
+            {
+                printf("CMD set current range low\r\n");
+                tca9534_pin_control(RELAY_A_ENA, 1);
+                tca9534_pin_control(RELAY_B_ENA, 0);
+                resp->result = 1;
+            }
+            else
+            {
+                printf("CMD set current range is invalid\r\n");
+            }
+            cdc_acm_cmd_response_send();
+            break;
+        case CMD_SET_USB_VBUS_SW:
+            if(p_cmd->param_1 == 0x01)
+            {
+                printf("CMD set USB VBUS SW on\r\n");
+                tca9534_pin_control(USB_VBUS_ENA, 1);
+                resp->result = 1;
+            }
+            else if (p_cmd->param_1 == 0x00)
+            {
+                printf("CMD set USB VBUS SW off\r\n");
+                tca9534_pin_control(USB_VBUS_ENA, 0);
+                resp->result = 1;
+            }
+            else
+            {
+                printf("CMD set USB VBUS SW is invalid\r\n");
+            }
+            cdc_acm_cmd_response_send();
+            break;
+        case CMD_SET_USB_DATA_SW:
+            if(p_cmd->param_1 == 0x01)
+            {
+                printf("CMD set USB DATA SW on\r\n");
+                tca9534_pin_control(USB_DATA_ENA, 1);
+                resp->result = 1;
+            }
+            else if (p_cmd->param_1 == 0x00)
+            {
+                printf("CMD set USB DATA SW off\r\n");
+                tca9534_pin_control(USB_DATA_ENA, 0);
+                resp->result = 1;
+            }
+            else
+            {
+                printf("CMD set USB DATA SW is invalid\r\n");
+            }
+            cdc_acm_cmd_response_send();
+            break;
         default:
             printf("Unknown cmd type\r\n");
             resp->result = 0;

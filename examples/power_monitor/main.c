@@ -45,12 +45,12 @@ void gpio_init(void)
 
 void status_led_on(void)
 {
-    bflb_gpio_reset(gpio, GPIO_LED);    
+    bflb_gpio_reset(gpio, GPIO_LED);
 }
 
 void status_led_off(void)
 {
-    bflb_gpio_set(gpio, GPIO_LED);    
+    bflb_gpio_set(gpio, GPIO_LED);
 }
 
 int main(void)
@@ -75,8 +75,10 @@ int main(void)
 
     bat_sim_read_config_data_code_epprom();
     bat_sim_fast_mode_write(DATA_3P8); /* Default output voltage */
-    //tca9534_pin_control(BAT_SIM_ENA, 1);
     tca9534_pin_control(VOL_MEASURE, 1);
+    /* temporally set high current measurement */
+    tca9534_pin_control(RELAY_A_ENA, 0);
+    tca9534_pin_control(RELAY_B_ENA, 1);
     printf("Enable battery simulator output\r\n");
 
     printf("Init INA229...\r\n");
