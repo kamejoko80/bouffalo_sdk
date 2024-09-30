@@ -6,7 +6,9 @@ find_package(bouffalo_sdk REQUIRED HINTS $ENV{BL_SDK_BASE})
 
 sdk_add_include_directories(.)
 
-target_sources(app PRIVATE cdc_acm_template.c spi_fifo_test.c)
+sdk_add_compile_definitions(-DMCU_MODULE_${MCU_MODULE})
+
+target_sources(app PRIVATE gw1n.c cdc_acm_template.c spi_fifo_test.c)
 sdk_set_main_file(main.c)
 
 project(spififo_test)
