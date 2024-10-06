@@ -29,9 +29,9 @@ RESOURCE_PATHS = [PROJECT_PATH]
 SIGNATURE = 0x87654321
 DATA_RPT_SAMPLE_SIZE = 63  # The size of the current and voltage arrays
 MAX_DATA_SIZE = 20000      # Maximum number of samples for zoom-out
-DAC_VCC = 4.75             # DAC VCC power supply voltage
-DATA_MAX_4P2 = 3622        # DATA_MAX_4P2 = 4096 * 4.2 / DAC_VCC
-DATA_3P8 = 3350            # Default VBAT output = 3.8V
+DAC_VCC = 5.0              # DAC VCC power supply voltage
+DATA_MAX_4P2 = 3441        # DATA_MAX_4P2 = 4096 * 4.2 / DAC_VCC
+DATA_3P8 = 3113            # Default VBAT output = 3.8V
 
 WAVEFORM_UPDATE_INTERVAL = 4 # In milisecon
 
