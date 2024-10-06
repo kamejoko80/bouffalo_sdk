@@ -65,7 +65,7 @@
  *
  */
 
-#define DAC_VCC (4.75)
+#define DAC_VCC (5.0)
 #define RSHUNT  (0.05)
 
 /* LSB in case ADCRANGE = 0 */
@@ -122,7 +122,7 @@ typedef struct {
 } ina229_config_t;
 
 typedef struct {
-    float vcc;    /* ADC VCC voltage [volts] */
+    float vcc;    /* DAC VCC voltage [volts] */
     float rshunt; /* Rhunt value [Ω] */
 } ina229_hw_param_t;
 
