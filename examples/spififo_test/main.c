@@ -6,6 +6,7 @@
 #include "board.h"
 #include "gw1n.h"
 #include "spi_fifo_test.h"
+#include "debug.h"
 
 /* This program is running on the Sipeed M0S dock only */
 #define BOOT_PIN   GPIO_PIN_2
@@ -22,13 +23,22 @@ int main(void)
 {
     board_init();
     gpio_button_init();
+    cdc_acm_init();
+
+    /* wait for user press start button */
+    while(!bflb_gpio_read(gpio, BOOT_PIN));
+    while(bflb_gpio_read(gpio, BOOT_PIN));
 
 #if defined(MCU_MODULE_A)
+
+    usb_printf("Module A: start program...\r\n");
 
     /* configure fpga */
     gowin_fpga_config();
 
 #else /* MCU_MODULE_B */
+
+    usb_printf("Module A: start program...\r\n");
 
     /* Init module b spi */
     spi_fifo_interface_bus_init();
@@ -46,7 +56,6 @@ int main(void)
     spi_ctrl_cmd_read_chip_id();
     spi_ctrl_cmd_write_data_with_given_data_len();
     spi_ctrl_data_receive_loop();
-
 #endif
 
     while(1);
