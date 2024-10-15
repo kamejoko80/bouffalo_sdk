@@ -1,7 +1,7 @@
 #ifndef _SPI_FIFO_TEST_H_
 #define _SPI_FIFO_TEST_H_
 
-void spi_fifo_interface_bus_init(void);
+void spi_fifo_interface_bus_init(uint8_t baudmhz);
 void spi_ctrl_send_byte(uint8_t byte);
 void spi_ctrl_cmd_read_gw_version(void);
 void spi_ctrl_cmd_read_chip_id(void);

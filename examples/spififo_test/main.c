@@ -35,10 +35,16 @@ int main(void)
 
     /* configure fpga */
     gowin_fpga_config();
-
+    
+    /* wait for fpga configured */
+    spi_fifo_interface_bus_init(32);    
+    bflb_mtimer_delay_ms(300);
+    spi_ctrl_cmd_read_gw_version();
+    spi_ctrl_cmd_read_chip_id();    
+    
 #else /* MCU_MODULE_B */
 
-    usb_printf("Module A: start program...\r\n");
+    usb_printf("Module B: start program...\r\n");
 
     /* Init module b spi */
     spi_fifo_interface_bus_init();
