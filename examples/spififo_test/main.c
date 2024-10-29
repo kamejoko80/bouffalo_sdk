@@ -5,6 +5,7 @@
 #include "bflb_mtimer.h"
 #include "board.h"
 #include "gw1n.h"
+#include "lmcxo2.h"
 #include "spi_fifo_test.h"
 #include "debug.h"
 
@@ -37,6 +38,11 @@ int main(void)
     /* configure fpga */
     gowin_fpga_config();
 #endif
+    
+#if defined(FPGA_MODULE_LMCXO2_640HC)
+    /* configure fpga */
+    lmcxo2_fpga_config();
+#endif    
     
     /* wait for fpga configured */
     spi_fifo_interface_bus_init(32);    

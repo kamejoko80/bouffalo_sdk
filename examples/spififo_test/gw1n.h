@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Hery Dang (henrydang@mijoconnected.com)
+ * Copyright (C) 2024 Hery Dang
  *
  * SPDX-License-Identifier: Apache-2.0
  */

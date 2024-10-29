@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Hery Dang (henrydang@mijoconnected.com)
+ * Copyright (C) 2024 Hery Dang
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,7 @@ static struct bflb_device_s *gpio;
 
 #define read_miso_pin() bflb_gpio_read(gpio, GPIO_PIN_30)
 
-void gowin_spi0_gpio_bitbang_init(void)
+static void gowin_spi0_gpio_bitbang_init(void)
 {
     gpio = bflb_device_get_by_name("gpio");
 
@@ -51,7 +51,7 @@ void gowin_spi0_gpio_bitbang_init(void)
 
 // SPI mode 0: CPOL = 0, CPHA = 0
 // SPI Bit-Bang Driver: Full-Duplex, MSB First, 8-bit data width
-void spi_gpio_transfer(uint8_t *tx_buf, uint8_t *rx_buf, uint32_t len)
+static void spi_gpio_transfer(uint8_t *tx_buf, uint8_t *rx_buf, uint32_t len)
 {
     for (uint32_t i = 0; i < len; i++) {
         uint8_t tx_byte = tx_buf ? tx_buf[i] : 0x00;
@@ -62,7 +62,7 @@ void spi_gpio_transfer(uint8_t *tx_buf, uint8_t *rx_buf, uint32_t len)
             if((tx_byte >> bit) & 0x01)
             {
                 set_mosi_pin();
-            } else {
+            } else { 
                 clr_mosi_pin();
             }
 
@@ -83,7 +83,7 @@ void spi_gpio_transfer(uint8_t *tx_buf, uint8_t *rx_buf, uint32_t len)
     }
 }
 
-void gowin_power_on(void)
+static void gowin_power_on(void)
 {
     /* fpga_vcore_ena = 1 */
     bflb_gpio_set(gpio, GPIO_PIN_1);
@@ -91,7 +91,7 @@ void gowin_power_on(void)
     bflb_gpio_reset(gpio, GPIO_PIN_0);
 }
 
-void gowin_power_off(void)
+static void gowin_power_off(void)
 {
     /* fpga_vddio_enan = 1 */
     bflb_gpio_set(gpio, GPIO_PIN_0);
@@ -99,12 +99,12 @@ void gowin_power_off(void)
     bflb_gpio_reset(gpio, GPIO_PIN_1);
 }
 
-void spi_dummy_clk(uint32_t n_clk)
+static void spi_dummy_clk(uint32_t n_clk)
 {
     spi_gpio_transfer(NULL, NULL, n_clk);
 }
 
-uint32_t gowin_read(uint32_t cmd)
+static uint32_t gowin_read(uint32_t cmd)
 {
 	uint8_t txData[8];
 	uint8_t rxData[8];
@@ -130,7 +130,7 @@ uint32_t gowin_read(uint32_t cmd)
 	return ret;
 }
 
-void gowin_write_cmd1(uint8_t cmd)
+static void gowin_write_cmd1(uint8_t cmd)
 {
 	uint8_t txData[1];
 
@@ -143,7 +143,7 @@ void gowin_write_cmd1(uint8_t cmd)
     set_csn_pin();
 }
 
-void gowin_write_cmd2(uint16_t cmd)
+static void gowin_write_cmd2(uint16_t cmd)
 {
 	uint8_t txData[2];
 
@@ -157,7 +157,7 @@ void gowin_write_cmd2(uint16_t cmd)
     set_csn_pin();
 }
 
-void gowin_download_bitstream(uint8_t *data, uint32_t len)
+static void gowin_download_bitstream(uint8_t *data, uint32_t len)
 {
 	uint8_t cmd = 0x3B;
 
