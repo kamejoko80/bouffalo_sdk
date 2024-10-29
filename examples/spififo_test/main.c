@@ -33,8 +33,10 @@ int main(void)
 
     usb_printf("Module A: start program...\r\n");
 
+#if defined(FPGA_MODULE_GW1N_LV1)
     /* configure fpga */
     gowin_fpga_config();
+#endif
     
     /* wait for fpga configured */
     spi_fifo_interface_bus_init(32);    

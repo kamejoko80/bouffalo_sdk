@@ -15,10 +15,21 @@ export PATH=$PATH:$(realpath ../../tools/toolchains/bin)
 
 ## Compile
 
-- BL616/BL618
+- CHIP
+    + BL616
+    + BL618
+
+- MCU_MODULE
+    + A
+    + B
+
+- FPGA_MODULE
+    + GW1N_LV1
+    + LMCXO2_256ZE
+    + LMCXO2_640HC
 
 ```
-make ninja CHIP=bl616 BOARD=bl616dk MCU_MODULE=A (or MCU_MODULE=B)
+make ninja CHIP=bl616 BOARD=bl616dk MCU_MODULE=A FPGA_MODULE=GW1N_LV1
 ```
 
 ## Flash
