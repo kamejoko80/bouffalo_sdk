@@ -23,6 +23,12 @@ static struct bflb_device_s *gpio;
 
 #define read_miso_pin() bflb_gpio_read(gpio, GPIO_PIN_30)
 
+#define clr_progn_pin() bflb_gpio_reset(gpio, GPIO_PIN_17)
+#define set_progn_pin() bflb_gpio_set(gpio, GPIO_PIN_17)
+#define read_init_pin() bflb_gpio_read(gpio, GPIO_PIN_20)
+#define read_done_pin() bflb_gpio_read(gpio, GPIO_PIN_11)
+
+
 void lmcxo2_spi0_gpio_bitbang_init(void)
 {
     gpio = bflb_device_get_by_name("gpio");
@@ -34,6 +40,13 @@ void lmcxo2_spi0_gpio_bitbang_init(void)
     /* fpga_vcore_ena as gpio */
     bflb_gpio_init(gpio, GPIO_PIN_1, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_1);
     bflb_gpio_reset(gpio, GPIO_PIN_1);
+
+    /* INITN gpio as input */
+    bflb_gpio_init(gpio, GPIO_PIN_20, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0);
+    /* DONE gpio as input */
+    bflb_gpio_init(gpio, GPIO_PIN_11, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0);
+    /* PROGRAMN gpio as output */
+    bflb_gpio_init(gpio, GPIO_PIN_17, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_1);    
 
     /* spi cs as gpio */
     bflb_gpio_init(gpio, GPIO_PIN_28, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_1);
@@ -180,11 +193,21 @@ void lmcxo2_fpga_config(void)
     /* power off fpga */
     lmcxo2_power_off();
 
+    /* clear PROGRAMN pint */
+    clr_progn_pin();
+
     /* power on fpga */
     lmcxo2_power_on();
 
     /* wait for fpga por */
     bflb_mtimer_delay_ms(200);
+
+    /* check init and done is low */
+    if(read_init_pin() != 0 || read_done_pin() != 0)
+    {
+       usb_printf("Error! FPGA is not in POR state\r\n");
+       return;
+    }
 
     data = lmcxo2_read(0x11000000);
 
