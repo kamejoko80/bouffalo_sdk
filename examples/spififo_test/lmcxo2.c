@@ -97,95 +97,37 @@ static void spi_gpio_transfer(uint8_t *tx_buf, uint8_t *rx_buf, uint32_t len)
 
 static void lmcxo2_power_on(void)
 {
+    /* fpga_vddio_enan = 0 */
+    bflb_gpio_reset(gpio, GPIO_PIN_0);    
     /* fpga_vcore_ena = 1 */
     bflb_gpio_set(gpio, GPIO_PIN_1);
-    /* fpga_vddio_enan = 0 */
-    bflb_gpio_reset(gpio, GPIO_PIN_0);
 }
 
 static void lmcxo2_power_off(void)
 {
+    /* fpga_vcore_ena = 0 */
+    bflb_gpio_reset(gpio, GPIO_PIN_1);    
     /* fpga_vddio_enan = 1 */
     bflb_gpio_set(gpio, GPIO_PIN_0);
-    /* fpga_vcore_ena = 0 */
-    bflb_gpio_reset(gpio, GPIO_PIN_1);
 }
 
-static void spi_dummy_clk(uint32_t n_clk)
+static void lmcxo2_read_device_id(void)
 {
-    spi_gpio_transfer(NULL, NULL, n_clk);
-}
-
-static uint32_t lmcxo2_read(uint32_t cmd)
-{
-	uint8_t txData[8];
-	uint8_t rxData[8];
-	uint32_t ret;
-
-	/* Prepare command buffer */
-	txData[0] = (uint8_t)(cmd >> 24);
-	txData[1] = (uint8_t)(cmd >> 16);
-	txData[2] = (uint8_t)(cmd >> 8);
-	txData[3] = (uint8_t)cmd;
-
-    spi_dummy_clk(1);
-
+    uint32_t device_id;
+    uint8_t cmd[] = {0xE0, 0x00, 0x00, 0x00};
+    uint8_t id[]  = {0x00, 0x00, 0x00, 0x00};
+    
     clr_csn_pin();
-    spi_gpio_transfer(txData, rxData, 8);
+    spi_gpio_transfer(cmd, id, 4);
     set_csn_pin();
-
-	ret = ((uint32_t)(rxData[4] << 24) |
-		   (uint32_t)(rxData[5] << 16) |
-		   (uint32_t)(rxData[6] << 8)  |
-		   (uint32_t)(rxData[7]));
-
-	return ret;
-}
-
-static void lmcxo2_write_cmd1(uint8_t cmd)
-{
-	uint8_t txData[1];
-
-	/* Prepare command buffer */
-	txData[0] = (uint8_t)(cmd);
-
-    spi_dummy_clk(1);
-    clr_csn_pin();
-    spi_gpio_transfer(txData, NULL, 1);
-    set_csn_pin();
-}
-
-static void lmcxo2_write_cmd2(uint16_t cmd)
-{
-	uint8_t txData[2];
-
-	/* Prepare command buffer */
-	txData[0] = (uint8_t)(cmd >> 8);
-	txData[1] = (uint8_t)(cmd);
-
-    spi_dummy_clk(1);
-    clr_csn_pin();
-    spi_gpio_transfer(txData, NULL, 2);
-    set_csn_pin();
-}
-
-static void lmcxo2_download_bitstream(uint8_t *data, uint32_t len)
-{
-	uint8_t cmd = 0x3B;
-
-    /* Send write command */
-    spi_dummy_clk(1);
-    clr_csn_pin();
-    spi_gpio_transfer(&cmd, NULL, 1);
-    spi_gpio_transfer(data, NULL, len);
-    set_csn_pin();
-}
+    
+    device_id = (id[1] << 16) | (id[2] << 8) | id[3];
+    usb_printf("Device ID: 0x%06X\r\n", device_id);
+}    
 
 void lmcxo2_fpga_config(void)
 {
-    uint32_t data;
-
-    usb_printf("Gowin FPGA programming\r\n");
+    usb_printf("LMCXO2 FPGA programming\r\n");
 
     /* Init dedicated spi for the FPGA config */
     lmcxo2_spi0_gpio_bitbang_init();
@@ -193,54 +135,20 @@ void lmcxo2_fpga_config(void)
     /* power off fpga */
     lmcxo2_power_off();
 
-    /* clear PROGRAMN pint */
-    clr_progn_pin();
-
     /* power on fpga */
     lmcxo2_power_on();
 
     /* wait for fpga por */
-    bflb_mtimer_delay_ms(200);
+    bflb_mtimer_delay_ms(100);
 
-    /* check init and done is low */
-    if(read_init_pin() != 0 || read_done_pin() != 0)
-    {
-       usb_printf("Error! FPGA is not in POR state\r\n");
-       return;
-    }
+    /* clear PROGRAMN pint */
+    clr_progn_pin();
 
-    data = lmcxo2_read(0x11000000);
+    /* wait for fpga por */
+    bflb_mtimer_delay_ms(100);
 
-    if(data != 0x900281B) {
-        usb_printf("Error! Invalid device ID %X\r\n", data);
-        return;
-    } else {
-        usb_printf("Found device ID %X\r\n", data);
-    }
+    /* read fpga device id */
+    lmcxo2_read_device_id();
 
-    /* Write enable */
-    lmcxo2_write_cmd2(0x1500);
-
-    /* Write bitstream */
-    //lmcxo2_download_bitstream((uint8_t*)gw1n_image, sizeof(gw1n_image));
-
-    /* Write disable */
-    lmcxo2_write_cmd2(0x3A00);
-
-    /* Write nop */
-    lmcxo2_write_cmd1(0x02);
-    bflb_mtimer_delay_ms(10);
-
-    usb_printf("Gowin fpga configuration done\r\n");
-
-#if 0 /* Because we configured SSPI as GPIO pins so at the end we cannot access the SSPI bus */
-    /* Validate the downloaded bit stream */
-    data = lmcxo2_read(0x41000000);
-
-    if (data != 0x1F020) {
-        cdc_acm_printf("Error! Bit stream download failed %X\r\n", data);
-    } else {
-        cdc_acm_printf("Bit stream download successfully\r\n");
-    }
-#endif
+    return;
 }

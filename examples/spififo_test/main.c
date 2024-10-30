@@ -10,7 +10,7 @@
 #include "debug.h"
 
 /* This program is running on the Sipeed M0S dock only */
-#define BOOT_PIN   GPIO_PIN_2
+#define BOOT_PIN GPIO_PIN_2
 
 static struct bflb_device_s *gpio;
 
@@ -45,10 +45,10 @@ int main(void)
 #endif    
     
     /* wait for fpga configured */
-    spi_fifo_interface_bus_init(32);    
-    bflb_mtimer_delay_ms(300);
-    spi_ctrl_cmd_read_gw_version();
-    spi_ctrl_cmd_read_chip_id();    
+    //spi_fifo_interface_bus_init(32);    
+    //bflb_mtimer_delay_ms(300);
+    //spi_ctrl_cmd_read_gw_version();
+    //spi_ctrl_cmd_read_chip_id();    
     
 #else /* MCU_MODULE_B */
 
