@@ -41,7 +41,10 @@ int main(void)
     
 #if defined(FPGA_MODULE_LMCXO2_640HC)
     /* configure fpga */
-    lmcxo2_fpga_config();
+    //lmcxo2_fpga_config();
+    
+    extern int xsvftool_esp_scan(void);
+    xsvftool_esp_scan();
 #endif    
     
     /* wait for fpga configured */

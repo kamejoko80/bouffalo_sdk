@@ -46,7 +46,8 @@ void lmcxo2_spi0_gpio_bitbang_init(void)
     /* DONE gpio as input */
     bflb_gpio_init(gpio, GPIO_PIN_11, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0);
     /* PROGRAMN gpio as output */
-    bflb_gpio_init(gpio, GPIO_PIN_17, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_1);    
+    bflb_gpio_init(gpio, GPIO_PIN_17, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_1);
+    bflb_gpio_set(gpio, GPIO_PIN_17);
 
     /* spi cs as gpio */
     bflb_gpio_init(gpio, GPIO_PIN_28, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_1);
@@ -98,7 +99,7 @@ static void spi_gpio_transfer(uint8_t *tx_buf, uint8_t *rx_buf, uint32_t len)
 static void lmcxo2_power_on(void)
 {
     /* fpga_vddio_enan = 0 */
-    bflb_gpio_reset(gpio, GPIO_PIN_0);    
+    bflb_gpio_reset(gpio, GPIO_PIN_0);
     /* fpga_vcore_ena = 1 */
     bflb_gpio_set(gpio, GPIO_PIN_1);
 }
@@ -106,7 +107,7 @@ static void lmcxo2_power_on(void)
 static void lmcxo2_power_off(void)
 {
     /* fpga_vcore_ena = 0 */
-    bflb_gpio_reset(gpio, GPIO_PIN_1);    
+    bflb_gpio_reset(gpio, GPIO_PIN_1);
     /* fpga_vddio_enan = 1 */
     bflb_gpio_set(gpio, GPIO_PIN_0);
 }
@@ -116,14 +117,14 @@ static void lmcxo2_read_device_id(void)
     uint32_t device_id;
     uint8_t cmd[] = {0xE0, 0x00, 0x00, 0x00};
     uint8_t id[]  = {0x00, 0x00, 0x00, 0x00};
-    
+
     clr_csn_pin();
     spi_gpio_transfer(cmd, id, 4);
     set_csn_pin();
-    
+
     device_id = (id[1] << 16) | (id[2] << 8) | id[3];
     usb_printf("Device ID: 0x%06X\r\n", device_id);
-}    
+}
 
 void lmcxo2_fpga_config(void)
 {
@@ -134,18 +135,15 @@ void lmcxo2_fpga_config(void)
 
     /* power off fpga */
     lmcxo2_power_off();
-
     /* power on fpga */
     lmcxo2_power_on();
 
-    /* wait for fpga por */
-    bflb_mtimer_delay_ms(100);
-
-    /* clear PROGRAMN pint */
+    /* program pulse */
+    bflb_mtimer_delay_ms(10);
     clr_progn_pin();
-
-    /* wait for fpga por */
-    bflb_mtimer_delay_ms(100);
+    bflb_mtimer_delay_ms(10);
+    set_progn_pin();
+    bflb_mtimer_delay_ms(10);
 
     /* read fpga device id */
     lmcxo2_read_device_id();
