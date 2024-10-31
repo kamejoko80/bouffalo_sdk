@@ -28,7 +28,6 @@ static struct bflb_device_s *gpio;
 #define read_init_pin() bflb_gpio_read(gpio, GPIO_PIN_20)
 #define read_done_pin() bflb_gpio_read(gpio, GPIO_PIN_11)
 
-
 void lmcxo2_spi0_gpio_bitbang_init(void)
 {
     gpio = bflb_device_get_by_name("gpio");
@@ -49,6 +48,7 @@ void lmcxo2_spi0_gpio_bitbang_init(void)
     bflb_gpio_init(gpio, GPIO_PIN_17, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_1);
     bflb_gpio_set(gpio, GPIO_PIN_17);
 
+#if 0
     /* spi cs as gpio */
     bflb_gpio_init(gpio, GPIO_PIN_28, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_1);
     bflb_gpio_set(gpio, GPIO_PIN_28);
@@ -60,6 +60,8 @@ void lmcxo2_spi0_gpio_bitbang_init(void)
     /* spi mosi as gpio */
     bflb_gpio_init(gpio, GPIO_PIN_27, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_1);
     bflb_gpio_reset(gpio, GPIO_PIN_27);
+#endif
+    
 }
 
 // SPI mode 0: CPOL = 0, CPHA = 0
@@ -139,14 +141,14 @@ void lmcxo2_fpga_config(void)
     lmcxo2_power_on();
 
     /* program pulse */
-    bflb_mtimer_delay_ms(10);
-    clr_progn_pin();
-    bflb_mtimer_delay_ms(10);
-    set_progn_pin();
-    bflb_mtimer_delay_ms(10);
+    //bflb_mtimer_delay_ms(10);
+    //clr_progn_pin();
+    //bflb_mtimer_delay_ms(10);
+    //set_progn_pin();
+    //bflb_mtimer_delay_ms(10);
 
     /* read fpga device id */
-    lmcxo2_read_device_id();
+    //lmcxo2_read_device_id();
 
     return;
 }

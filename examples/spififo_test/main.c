@@ -41,10 +41,14 @@ int main(void)
     
 #if defined(FPGA_MODULE_LMCXO2_640HC)
     /* configure fpga */
-    //lmcxo2_fpga_config();
+    lmcxo2_fpga_config();
     
-    extern int xsvftool_esp_scan(void);
-    xsvftool_esp_scan();
+    //extern int xsvftool_blk616_scan(void);
+    //uint32_t idcode = xsvftool_blk616_scan();
+    
+    //usb_printf("idcode=0x%08lx, revision=0x%01lx, part=0x%04lx, manufactor=0x%03lx\r\n", idcode,
+    //    (idcode >> 28) & 0xf, (idcode >> 12) & 0xffff, (idcode >> 1) & 0x7ff);
+
 #endif    
     
     /* wait for fpga configured */

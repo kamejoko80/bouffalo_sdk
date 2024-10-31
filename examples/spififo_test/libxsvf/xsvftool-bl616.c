@@ -34,24 +34,64 @@
 
 /** BEGIN: Low-Level I/O Implementation **/
 
+#define JTAG_TCK_PIN GPIO_PIN_14
+#define JTAG_TDI_PIN GPIO_PIN_15
+#define JTAG_TMS_PIN GPIO_PIN_3
+#define JTAG_TDO_PIN GPIO_PIN_12
+
+static struct bflb_device_s *gpio;
+
 static void io_setup(void)
 {
+    gpio = bflb_device_get_by_name("gpio");
+
+    /* JTAG_TCK */
+    bflb_gpio_init(gpio, JTAG_TCK_PIN, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_1);
+    /* JTAG_TDI */
+    bflb_gpio_init(gpio, JTAG_TDI_PIN, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_1);    
+    /* JTAG_TMS */
+    bflb_gpio_init(gpio, JTAG_TMS_PIN, GPIO_OUTPUT | GPIO_SMT_EN | GPIO_DRV_1); 
+    /* JTAG_TDO */
+    bflb_gpio_init(gpio, JTAG_TDO_PIN, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0);
 }
 
 static void io_shutdown(void)
 {
+    /* JTAG_TCK */
+    bflb_gpio_init(gpio, JTAG_TCK_PIN, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0);
+    /* JTAG_TDI */
+    bflb_gpio_init(gpio, JTAG_TDI_PIN, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0);    
+    /* JTAG_TMS */
+    bflb_gpio_init(gpio, JTAG_TMS_PIN, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0); 
+    /* JTAG_TDI */
+    bflb_gpio_init(gpio, JTAG_TDO_PIN, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0); 
 }
 
 static void io_tms(int val)
 {
+    if(val) {
+        bflb_gpio_set(gpio, JTAG_TMS_PIN);
+    } else {
+        bflb_gpio_reset(gpio, JTAG_TMS_PIN);        
+    }
 }
 
 static void io_tdi(int val)
 {
+    if(val) {
+        bflb_gpio_set(gpio, JTAG_TDI_PIN);
+    } else {
+        bflb_gpio_reset(gpio, JTAG_TDI_PIN);        
+    }    
 }
 
 static void io_tck(int val)
 {
+    if(val) {
+        bflb_gpio_set(gpio, JTAG_TCK_PIN);
+    } else {
+        bflb_gpio_reset(gpio, JTAG_TCK_PIN);        
+    }      
 }
 
 static void io_sck(int val)
@@ -64,7 +104,7 @@ static void io_trst(int val)
 
 static int io_tdo()
 {
-	return -1;
+	return bflb_gpio_read(gpio, JTAG_TDO_PIN);
 }
 
 /** END: Low-Level I/O Implementation **/
@@ -83,8 +123,7 @@ static int h_setup(struct libxsvf_host *h)
 {
 	struct udata_s *u = h->user_data;
 	if (u->verbose >= 2) {
-		fprintf(stderr, "[SETUP]\n");
-		fflush(stderr);
+		usb_printf("[SETUP]\r\n");
 	}
 	io_setup();
 	return 0;
@@ -94,8 +133,7 @@ static int h_shutdown(struct libxsvf_host *h)
 {
 	struct udata_s *u = h->user_data;
 	if (u->verbose >= 2) {
-		fprintf(stderr, "[SHUTDOWN]\n");
-		fflush(stderr);
+		usb_printf("[SHUTDOWN]\r\n");
 	}
 	io_shutdown();
 	return 0;
@@ -105,8 +143,7 @@ static void h_udelay(struct libxsvf_host *h, long usecs, int tms, long num_tck)
 {
 	struct udata_s *u = h->user_data;
 	if (u->verbose >= 3) {
-		fprintf(stderr, "[DELAY:%ld, TMS:%d, NUM_TCK:%ld]\n", usecs, tms, num_tck);
-		fflush(stderr);
+		usb_printf("[DELAY:%ld, TMS:%d, NUM_TCK:%ld]\r\n", usecs, tms, num_tck);
 	}
 	if (num_tck > 0) {
 		struct timeval tv1, tv2;
@@ -124,12 +161,11 @@ static void h_udelay(struct libxsvf_host *h, long usecs, int tms, long num_tck)
 		}
 		usecs -= tv2.tv_usec - tv1.tv_usec;
 		if (u->verbose >= 3) {
-			fprintf(stderr, "[DELAY_AFTER_TCK:%ld]\n", usecs > 0 ? usecs : 0);
-			fflush(stderr);
+			usb_printf("[DELAY_AFTER_TCK:%ld]\r\n", usecs > 0 ? usecs : 0);
 		}
 	}
 	if (usecs > 0) {
-		// usleep(usecs); // Henry commend out
+		bflb_mtimer_delay_us(usecs);
 	}
 }
 
@@ -166,7 +202,7 @@ static int h_pulse_tck(struct libxsvf_host *h, int tms, int tdi, int tdo, int rm
 	}
 
 	if (u->verbose >= 4) {
-		fprintf(stderr, "[TMS:%d, TDI:%d, TDO_ARG:%d, TDO_LINE:%d, RMASK:%d, RC:%d]\n", tms, tdi, tdo, line_tdo, rmask, rc);
+		usb_printf("[TMS:%d, TDI:%d, TDO_ARG:%d, TDO_LINE:%d, RMASK:%d, RC:%d]\r\n", tms, tdi, tdo, line_tdo, rmask, rc);
 	}
 
 	u->clockcount++;
@@ -177,7 +213,7 @@ static void h_pulse_sck(struct libxsvf_host *h)
 {
 	struct udata_s *u = h->user_data;
 	if (u->verbose >= 4) {
-		fprintf(stderr, "[SCK]\n");
+		usb_printf("[SCK]\r\n");
 	}
 	io_sck(0);
 	io_sck(1);
@@ -187,14 +223,14 @@ static void h_set_trst(struct libxsvf_host *h, int v)
 {
 	struct udata_s *u = h->user_data;
 	if (u->verbose >= 4) {
-		fprintf(stderr, "[TRST:%d]\n", v);
+		usb_printf("[TRST:%d]\r\n", v);
 	}
 	io_trst(v);
 }
 
 static int h_set_frequency(struct libxsvf_host *h, int v)
 {
-	fprintf(stderr, "WARNING: Setting JTAG clock frequency to %d ignored!\n", v);
+	usb_printf("WARNING: Setting JTAG clock frequency to %d ignored!\r\n", v);
 	return 0;
 }
 
@@ -202,14 +238,14 @@ static void h_report_tapstate(struct libxsvf_host *h)
 {
 	struct udata_s *u = h->user_data;
 	if (u->verbose >= 3) {
-		fprintf(stderr, "[%s]\n", libxsvf_state2str(h->tap_state));
+		usb_printf("[%s]\r\n", libxsvf_state2str(h->tap_state));
 	}
 }
 
 static void h_report_device(struct libxsvf_host *h, unsigned long idcode)
 {
 	// struct udata_s *u = h->user_data;
-	printf("idcode=0x%08lx, revision=0x%01lx, part=0x%04lx, manufactor=0x%03lx\n", idcode,
+	usb_printf("idcode=0x%08lx, revision=0x%01lx, part=0x%04lx, manufactor=0x%03lx\r\n", idcode,
 			(idcode >> 28) & 0xf, (idcode >> 12) & 0xffff, (idcode >> 1) & 0x7ff);
 }
 
@@ -217,13 +253,13 @@ static void h_report_status(struct libxsvf_host *h, const char *message)
 {
 	struct udata_s *u = h->user_data;
 	if (u->verbose >= 2) {
-		fprintf(stderr, "[STATUS] %s\n", message);
+		usb_printf("[STATUS] %s\r\n", message);
 	}
 }
 
 static void h_report_error(struct libxsvf_host *h, const char *file, int line, const char *message)
 {
-	fprintf(stderr, "[%s:%d] %s\n", file, line, message);
+	usb_printf("[%s:%d] %s\r\n", file, line, message);
 }
 
 static int realloc_maxsize[LIBXSVF_MEM_NUM];
@@ -234,7 +270,7 @@ static void *h_realloc(struct libxsvf_host *h, void *ptr, int size, enum libxsvf
 	if (size > realloc_maxsize[which])
 		realloc_maxsize[which] = size;
 	if (u->verbose >= 3) {
-		fprintf(stderr, "[REALLOC:%s:%d]\n", libxsvf_mem2str(which), size);
+		usb_printf("[REALLOC:%s:%d]\r\n", libxsvf_mem2str(which), size);
 	}
 	return realloc(ptr, size);
 }
@@ -265,42 +301,43 @@ static void copyleft()
 	static int already_printed = 0;
 	if (already_printed)
 		return;
-	fprintf(stderr, "xsvftool-gpio, part of Lib(X)SVF (http://www.clifford.at/libxsvf/).\n");
-	fprintf(stderr, "Copyright (C) 2009  RIEGL Research ForschungsGmbH\n");
-	fprintf(stderr, "Copyright (C) 2009  Clifford Wolf <clifford@clifford.at>\n");
-	fprintf(stderr, "Lib(X)SVF is free software licensed under the ISC license.\n");
+	usb_printf(stderr, "xsvftool-bl616, part of Lib(X)SVF (http://www.clifford.at/libxsvf/).\n");
+	usb_printf(stderr, "Copyright (C) 2009  RIEGL Research ForschungsGmbH\n");
+	usb_printf(stderr, "Copyright (C) 2009  Clifford Wolf <clifford@clifford.at>\n");
+	usb_printf(stderr, "Lib(X)SVF is free software licensed under the ISC license.\n");
 	already_printed = 1;
 }
 
 static void help()
 {
 	copyleft();
-	fprintf(stderr, "\n");
-	fprintf(stderr, "Usage: %s [ -r funcname ] [ -v ... ] [ -L | -B ] { -s svf-file | -x xsvf-file | -c } ...\n", progname);
-	fprintf(stderr, "\n");
-	fprintf(stderr, "   -r funcname\n");
-	fprintf(stderr, "          Dump C-code for pseudo-allocator based on example files\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "   -v, -vv, -vvv, -vvvv\n");
-	fprintf(stderr, "          Verbose, more verbose and even more verbose\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "   -L, -B\n");
-	fprintf(stderr, "          Print RMASK bits as hex value (little or big endian)\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "   -s svf-file\n");
-	fprintf(stderr, "          Play the specified SVF file\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "   -x xsvf-file\n");
-	fprintf(stderr, "          Play the specified XSVF file\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "   -c\n");
-	fprintf(stderr, "          List devices in JTAG chain\n");
-	fprintf(stderr, "\n");
+	usb_printf("\r\n");
+	usb_printf("Usage: %s [ -r funcname ] [ -v ... ] [ -L | -B ] { -s svf-file | -x xsvf-file | -c } ...\r\n", progname);
+	usb_printf("\r\n");
+	usb_printf("   -r funcname\r\n");
+	usb_printf("          Dump C-code for pseudo-allocator based on example files\r\n");
+	usb_printf("\r\n");
+	usb_printf("   -v, -vv, -vvv, -vvvv\r\n");
+	usb_printf("          Verbose, more verbose and even more verbose\r\n");
+	usb_printf("\r\n");
+	usb_printf("   -L, -B\r\n");
+	usb_printf("          Print RMASK bits as hex value (little or big endian)\r\n");
+	usb_printf("\r\n");
+	usb_printf("   -s svf-file\r\n");
+	usb_printf("          Play the specified SVF file\r\n");
+	usb_printf("\r\n");
+	usb_printf("   -x xsvf-file\r\n");
+	usb_printf("          Play the specified XSVF file\r\n");
+	usb_printf("\r\n");
+	usb_printf("   -c\r\n");
+	usb_printf("          List devices in JTAG chain\r\n");
+	usb_printf("\r\n");
 	exit(1);
 }
 
-int xsvftool_esp_scan(void)
+int xsvftool_blk616_scan(void)
 {
+  u.verbose = 3;  
   return libxsvf_play(&h, LIBXSVF_MODE_SCAN);
 }
 
