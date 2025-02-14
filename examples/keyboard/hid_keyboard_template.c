@@ -233,7 +233,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[64];
 
 void hid_keyboard_test(void)
 {
-    const uint8_t sendbuffer[8] = { 0x00, 0x00, HID_KBD_USAGE_C, 0x00, 0x00, 0x00, 0x00, 0x00 };
+    const uint8_t sendbuffer[8] = { 0x00, 0x00, HID_KBD_USAGE_ENTER, 0x00, 0x00, 0x00, 0x00, 0x00 };
     const uint8_t releasebuffer[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
     int ret;
 
@@ -246,7 +246,7 @@ void hid_keyboard_test(void)
     while (hid_state == HID_STATE_BUSY) {
     }
     
-    memcpy(releasebuffer, sendbuffer, 8);
+    memcpy(write_buffer, releasebuffer, 8);
     ret = usbd_ep_start_write(HID_INT_EP, write_buffer, 8);
     if (ret < 0) {
         return;
