@@ -1,0 +1,37 @@
+# Revision 1.41,Added 32QFN,,,,,,,,,,,,,
+# 8-Apr-2015,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,
+LCMXO2-256,,,,,,,,LCMXO2-1200,,,,,,
+Pin Number,Pin Function,Bank,Dual Function,Differential,True LVDS,DQS,,Pin Number,Pin Function,Bank,Dual Function,Differential,True LVDS,DQS
+1,PT6C,0,TDO,True_OF_PT6D,-,-,,1,PT10C,0,TDO,True_OF_PT10D,-,-
+2,VCC,-,-,-,-,-,,2,VCC,-,-,-,-,-
+3,GND,-,-,-,-,-,,3,GND,-,-,-,-,-
+4,PL5C,3,PCLKT3_0,True_OF_PL5D,-,-,,4,PL9A,3,PCLKT3_0,True_OF_PL9B,-,-
+5,PL5D,3,PCLKC3_0,Comp_OF_PL5C,-,-,,5,PL9B,3,PCLKC3_0,Comp_OF_PL9A,-,-
+6,VCCIO3,3,-,-,-,-,,6,VCCIO3,3,-,-,-,-
+7,VCCIO2,2,-,-,-,-,,7,VCCIO2,2,-,-,-,-
+8,PB2A,2,CSSPIN,True_OF_PB2B,-,-,,8,PB4C,2,CSSPIN,True_OF_PB4D,-,-
+9,PB2C,2,MCLK/CCLK,True_OF_PB2D,-,-,,9,PB6C,2,MCLK/CCLK,True_OF_PB6D,-,-
+10,PB2D,2,SO/SPISO,Comp_OF_PB2C,-,-,,10,PB6D,2,SO/SPISO,Comp_OF_PB6C,-,-
+11,PB4A,2,PCLKT2_0,True_OF_PB4B,-,-,,11,PB9A,2,PCLKT2_0,True_OF_PB9B,-,-
+12,PB4B,2,PCLKC2_0,Comp_OF_PB4A,-,-,,12,PB9B,2,PCLKC2_0,Comp_OF_PB9A,-,-
+13,PB4C,2,PCLKT2_1,True_OF_PB4D,-,-,,13,PB11A,2,PCLKT2_1,True_OF_PB11B,-,-
+14,PB4D,2,PCLKC2_1,Comp_OF_PB4C,-,-,,14,PB11B,2,PCLKC2_1,Comp_OF_PB11A,-,-
+15,VCCIO2,2,-,-,-,-,,15,VCCIO2,2,-,-,-,-
+16,PB9A,2,SN,True_OF_PB9B,-,-,,16,PB20C,2,SN,True_OF_PB20D,-,-
+17,PB9B,2,SI/SISPI,Comp_OF_PB9A,-,-,,17,PB20D,2,SI/SISPI,Comp_OF_PB20C,-,-
+18,VCC,-,-,-,-,-,,18,VCC,-,-,-,-,-
+19,VCCIO1,1,-,-,-,-,,19,VCCIO1,1,-,-,-,-
+20,PR5B,1,PCLKC1_0,Comp_OF_PR5A,-,-,,20,PR5D,1,PCLKC1_0,Comp_OF_PR5C,-,DQ0
+21,PR5A,1,PCLKT1_0,True_OF_PR5B,-,-,,21,PR5C,1,PCLKT1_0,True_OF_PR5D,-,DQ0
+22,GND,-,-,-,-,-,,22,GND,-,-,-,-,-
+23,PT9D,0,DONE,Comp_OF_PT9C,-,-,,23,PT17D,0,DONE,Comp_OF_PT17C,-,-
+24,VCCIO0,0,-,-,-,-,,24,VCCIO0,0,-,-,-,-
+25,PT9B,0,PROGRAMN,Comp_OF_PT9A,-,-,,25,PT15D,0,PROGRAMN,Comp_OF_PT15C,-,-
+26,PT9A,0,JTAGENB,True_OF_PT9B,-,-,,26,PT15C,0,JTAGENB,True_OF_PT15D,-,-
+27,PT8D,0,SDA/PCLKC0_0,Comp_OF_PT8C,-,-,,27,PT12D,0,SDA/PCLKC0_0,Comp_OF_PT12C,-,-
+28,PT8C,0,SCL/PCLKT0_0,True_OF_PT8D,-,-,,28,PT12C,0,SCL/PCLKT0_0,True_OF_PT12D,-,-
+29,PT7B,0,TMS,Comp_OF_PT7A,-,-,,29,PT11D,0,TMS,Comp_OF_PT11C,-,-
+30,PT7A,0,TCK,True_OF_PT7B,-,-,,30,PT11C,0,TCK,True_OF_PT11D,-,-
+31,VCCIO0,0,-,-,-,-,,31,VCCIO0,0,-,-,-,-
+32,PT6D,0,TDI,Comp_OF_PT6C,-,-,,32,PT10D,0,TDI,Comp_OF_PT10C,-,-
