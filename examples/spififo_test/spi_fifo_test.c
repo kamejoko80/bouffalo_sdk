@@ -137,7 +137,7 @@ void spi_ctrl_cmd_read_gw_version(void)
     uint8_t p_tx[5] = {0x06, 0x00, 0x00, 0x00, 0x00};
     uint8_t p_rx[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 5);
-    usb_printf("GW version YYMMDD = %d %d %d\r\n", p_rx[2], p_rx[3], p_rx[4]);
+    printf("GW version YYMMDD = %d %d %d\r\n", p_rx[2], p_rx[3], p_rx[4]);
 }
 
 void spi_ctrl_cmd_read_chip_id(void)
@@ -147,7 +147,7 @@ void spi_ctrl_cmd_read_chip_id(void)
 
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 5);
 
-    usb_printf("Chip ID           = %X %X %X\r\n", p_rx[2], p_rx[3], p_rx[4]);
+    printf("Chip ID           = %X %X %X\r\n", p_rx[2], p_rx[3], p_rx[4]);
 }
 
 void spi_ctrl_cmd_reset_fifo(void)
@@ -155,7 +155,7 @@ void spi_ctrl_cmd_reset_fifo(void)
     uint8_t p_tx[3] = {0x01, 0x00, 0x00};
     uint8_t p_rx[3] = {0x00, 0x00, 0x00};
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 3);
-    usb_printf("Reset fifo ack    = %X\r\n", p_rx[2]);
+    printf("Reset fifo ack    = %X\r\n", p_rx[2]);
 }
 
 void spi_ctrl_cmd_write_data_len(uint16_t len)
@@ -167,7 +167,7 @@ void spi_ctrl_cmd_write_data_len(uint16_t len)
     p_tx[2] = (uint8_t)(len);
 
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
-    usb_printf("Write dt len/ack  = %d %d\r\n", len, p_rx[3]);
+    printf("Write dt len/ack  = %d %d\r\n", len, p_rx[3]);
 }
 
 void spi_ctrl_cmd_read_data_len(void)
@@ -175,14 +175,14 @@ void spi_ctrl_cmd_read_data_len(void)
     uint8_t p_tx[4] = {0x03, 0x00, 0x00, 0x00};
     uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
-    usb_printf("Read data len     = %d\r\n", (uint16_t)((p_rx[2] << 8) | p_rx[3]));
+    printf("Read data len     = %d\r\n", (uint16_t)((p_rx[2] << 8) | p_rx[3]));
 }
 
 void spi_ctrl_cmd_write_data(void)
 {
     uint8_t p_tx[20] = {0x04, 0x00, 0x00, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0xA5};
     bflb_spi_poll_exchange(spi0, p_tx, NULL, 20);
-    usb_printf("Write data\r\n");
+    printf("Write data\r\n");
 }
 
 //  Write data with a given data length:
@@ -201,7 +201,7 @@ void spi_ctrl_cmd_read_data(void)
     uint8_t p_tx[8] = {0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     uint8_t p_rx[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 8);
-    usb_printf("Read data         = %X %X %X %X\r\n", p_rx[4], p_rx[5], p_rx[6], p_rx[7]);
+    printf("Read data         = %X %X %X %X\r\n", p_rx[4], p_rx[5], p_rx[6], p_rx[7]);
 }
 
 void spi_ctrl_cmd_read_tx_fifo_level(void)
@@ -209,7 +209,7 @@ void spi_ctrl_cmd_read_tx_fifo_level(void)
     uint8_t p_tx[4] = {0x08, 0x00, 0x00, 0x00};
     uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
-    usb_printf("Tx fifo level     = %d\r\n", (uint16_t)((p_rx[2] << 16) | p_rx[3]));
+    printf("Tx fifo level     = %d\r\n", (uint16_t)((p_rx[2] << 16) | p_rx[3]));
 }
 
 void spi_ctrl_cmd_read_rx_fifo_level(void)
@@ -217,7 +217,7 @@ void spi_ctrl_cmd_read_rx_fifo_level(void)
     uint8_t p_tx[4] = {0x09, 0x00, 0x00, 0x00};
     uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
-    usb_printf("Rx fifo level     = %d\r\n", (uint16_t)((p_rx[2] << 16) | p_rx[3]));
+    printf("Rx fifo level     = %d\r\n", (uint16_t)((p_rx[2] << 16) | p_rx[3]));
 }
 
 void spi_ctrl_data_receive_loop(void)
@@ -227,7 +227,7 @@ void spi_ctrl_data_receive_loop(void)
 
     uint16_t len;
 
-    usb_printf("Running data recieving loop...\r\n");
+    printf("Running data recieving loop...\r\n");
 
     while(1)
     {
@@ -236,20 +236,22 @@ void spi_ctrl_data_receive_loop(void)
             data_valid = 0;
 
             /* command read data len */
+            memset((void *)p_tx, 0x00, 4);
             p_tx[0] = 0x03;
             bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
             len = (uint16_t)((p_rx[2] << 8) | p_rx[3]);
-            usb_printf("Read data len = %d\r\n", len);
+            printf("Read data len = %d\r\n", len);
 
             /* read data */
+            memset((void *)p_tx, 0x00, 20);
             p_tx[0] = 0x05;
             bflb_spi_poll_exchange(spi0, p_tx, p_rx, len + 4);
-            usb_printf("Read data     = ");
+            printf("Read data     = ");
             for(int i = 0; i < len; i++)
             {
-                usb_printf("%2X ", p_rx[4 + i]);
+                printf("%2X ", p_rx[4 + i]);
             }
-            usb_printf("\r\n");
+            printf("\r\n");
 
             spi_ctrl_cmd_read_rx_fifo_level();
 
@@ -259,7 +261,7 @@ void spi_ctrl_data_receive_loop(void)
             /* wait for tx fifo empty */
             while(!read_txfifo_empty());
 
-            usb_printf("Resend data\r\n");
+            printf("Resend data\r\n");
 
             /* write data to the oponent */
             spi_ctrl_cmd_write_data_with_given_data_len();
