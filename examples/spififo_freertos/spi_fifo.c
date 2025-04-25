@@ -60,12 +60,12 @@ static void rdata_valid_isr(uint8_t pin)
 #if defined(MCU_MODULE_A)
     if (pin == GPIO_PIN_3) {
         vTaskNotifyGiveFromISR(spi_fifo_task_handle, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);       
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 #else
     if (pin == GPIO_PIN_0) {
         vTaskNotifyGiveFromISR(spi_fifo_task_handle, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);         
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 #endif
 }
@@ -232,23 +232,33 @@ static void spi_fifo_task(void *pvParameters)
     uint8_t p_rx[20];
 
     uint16_t len;
-    
+
     LOG_I("spi fifo task enter\r\n");
 
     for (;;)
     {
         /* Clear notification on receipt */
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        
+
         /* command read data len */
+        memset((void *)p_tx, 0x00, 4);
         p_tx[0] = 0x03;
+
+        taskENTER_CRITICAL(); /* Enter critical section (no preemption) */
         bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
+        taskEXIT_CRITICAL();
+
         len = (uint16_t)((p_rx[2] << 8) | p_rx[3]);
         printf("Read data len = %d\r\n", len);
 
         /* read data */
+        memset((void *)p_tx, 0x00, 20);
         p_tx[0] = 0x05;
+
+        taskENTER_CRITICAL(); /* Enter critical section (no preemption) */
         bflb_spi_poll_exchange(spi0, p_tx, p_rx, len + 4);
+        taskEXIT_CRITICAL();
+
         printf("Read data     = ");
         for(int i = 0; i < len; i++)
         {
@@ -259,19 +269,20 @@ static void spi_fifo_task(void *pvParameters)
         spi_ctrl_cmd_read_rx_fifo_level();
 
         /* small delay */
-        vTaskDelay(pdMS_TO_TICKS(1));
+        vTaskDelay(pdMS_TO_TICKS(10));
 
         /* wait for tx fifo empty */
         while(!read_txfifo_empty())
         {
             printf("tx fifo is not empty\r\n");
-            vTaskDelay(pdMS_TO_TICKS(10));
+            //vTaskDelay(pdMS_TO_TICKS(10));
+            vTaskDelete(NULL); /* Terminate task */
         }
 
         printf("Resend data\r\n");
 
         /* write data to the oponent */
-        spi_ctrl_cmd_write_data_with_given_data_len();                
+        spi_ctrl_cmd_write_data_with_given_data_len();
     }
 
     vTaskDelete(NULL);
@@ -280,5 +291,5 @@ static void spi_fifo_task(void *pvParameters)
 void spi_fifo_task_init(void)
 {
     LOG_I("[OS] Starting spi fifo task...\r\n");
-    xTaskCreate(spi_fifo_task, (char *)"spi_fifo_task", 512, NULL, configMAX_PRIORITIES - 2, &spi_fifo_task_handle);    
+    xTaskCreate(spi_fifo_task, (char *)"spi_fifo_task", 1024, NULL, configMAX_PRIORITIES - 2, &spi_fifo_task_handle);
 }
