@@ -3,7 +3,6 @@
 
 void spi_fifo_interface_bus_init(uint8_t baudmhz);
 void spi_fifo_task_init(void);
-void spi_ctrl_send_byte(uint8_t byte);
 void spi_ctrl_cmd_read_gw_version(void);
 void spi_ctrl_cmd_read_chip_id(void);
 void spi_ctrl_cmd_reset_fifo(void);
