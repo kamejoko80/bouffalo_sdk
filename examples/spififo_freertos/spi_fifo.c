@@ -372,7 +372,7 @@ static void spi_fifo_task(void *pvParameters)
         spi_ctrl_cmd_read_rx_fifo_level();
 
         /* small delay */
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(1));
 
         /* wait for tx fifo empty */
         while(!read_txfifo_empty())
