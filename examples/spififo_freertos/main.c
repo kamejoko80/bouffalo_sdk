@@ -33,6 +33,7 @@ int main(void)
 #if defined(FPGA_MODULE_GW1N_LV1)
     /* configure fpga */
     gowin_fpga_config();
+    bflb_mtimer_delay_ms(200);
 #endif
 #else /* MCU_MODULE_A */
     LOG_I("Module B: start program...\r\n");
@@ -40,7 +41,6 @@ int main(void)
 
     /* wait for fpga configured */
     spi_fifo_interface_bus_init(32);
-    bflb_mtimer_delay_ms(300);
 
     LOG_I("press button to run demo...\r\n");
     /* wait for user press start button */

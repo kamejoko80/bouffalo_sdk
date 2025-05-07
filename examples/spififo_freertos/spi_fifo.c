@@ -21,6 +21,7 @@ static SemaphoreHandle_t xSpiMutex;
 /*
  * For the command list refer to the following code:
  * https://github.com/kamejoko80/litex-soc-builder/blob/main/custom_projects/test_spi_fifo_gw1n_fpga_evb.py
+ * https://github.com/kamejoko80/litex-soc-builder/blob/main/custom_projects/test_spi_fifo_gw1n_dynamic_clk_fpga_evb.py
  */
 
 /* MODULE A connection:
@@ -371,7 +372,7 @@ static void spi_fifo_task(void *pvParameters)
         spi_ctrl_cmd_read_rx_fifo_level();
 
         /* small delay */
-        vTaskDelay(pdMS_TO_TICKS(1));
+        vTaskDelay(pdMS_TO_TICKS(1000));
 
         /* wait for tx fifo empty */
         while(!read_txfifo_empty())
