@@ -9,13 +9,14 @@
 #include <string.h>
 
 #define DBG_TAG                  "SPI_FIFO"
-#define SPI_DMA_MAX_TRANSFER_LEN (1024)
+#define SPI_DMA_MAX_TRANSFER_LEN (2048)
 #define DMA_TX_DONE_BIT          (1 << 0)
 #define DMA_RX_DONE_BIT          (1 << 1)
 
 #include "log.h"
 
-static TaskHandle_t      xSpiFifoTaskHandle;
+static TaskHandle_t      xSpiFifoTaskHandle = NULL;
+static TaskHandle_t      xSpiDmaTransferTaskHandle = NULL;
 static SemaphoreHandle_t xSpiMutex;
 
 /*
@@ -68,39 +69,46 @@ static struct bflb_dma_channel_lli_pool_s rx_llipool[1];
 static struct bflb_dma_channel_lli_transfer_s tx_transfers[1];
 static struct bflb_dma_channel_lli_transfer_s rx_transfers[1];
 
-static ATTR_NOCACHE_NOINIT_RAM_SECTION uint8_t tx_buffer[256];
-static ATTR_NOCACHE_NOINIT_RAM_SECTION uint8_t rx_buffer[256];
+static ATTR_NOCACHE_NOINIT_RAM_SECTION uint8_t tx_buffer[SPI_DMA_MAX_TRANSFER_LEN];
+static ATTR_NOCACHE_NOINIT_RAM_SECTION uint8_t rx_buffer[SPI_DMA_MAX_TRANSFER_LEN];
 
 void dma0_ch0_isr(void *arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     //LOG_I("spi dma tx done\r\n");
-    vTaskNotifyGiveIndexedFromISR(xSpiFifoTaskHandle, 0, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    if(xSpiDmaTransferTaskHandle != NULL) {
+        vTaskNotifyGiveIndexedFromISR(xSpiDmaTransferTaskHandle, 0, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
 }
 
 void dma0_ch1_isr(void *arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     //LOG_I("spi dma rx done\r\n");
-    vTaskNotifyGiveIndexedFromISR(xSpiFifoTaskHandle, 1, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    if(xSpiDmaTransferTaskHandle != NULL) {
+        vTaskNotifyGiveIndexedFromISR(xSpiDmaTransferTaskHandle, 1, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
 }
 
 static void rdata_valid_isr(uint8_t pin)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    //LOG_I("rdata_valid_isr\r\n");
+    if(xSpiFifoTaskHandle != NULL) {
 #if defined(MCU_MODULE_A)
-    if (pin == GPIO_PIN_3) {
-        vTaskNotifyGiveFromISR(xSpiFifoTaskHandle, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
+        if (pin == GPIO_PIN_3) {
+            vTaskNotifyGiveFromISR(xSpiFifoTaskHandle, &xHigherPriorityTaskWoken);
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
 #else
-    if (pin == GPIO_PIN_0) {
-        vTaskNotifyGiveFromISR(xSpiFifoTaskHandle, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
+        if (pin == GPIO_PIN_0) {
+            vTaskNotifyGiveFromISR(xSpiFifoTaskHandle, &xHigherPriorityTaskWoken);
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
 #endif
+    }
 }
 
 void spi_gpio_init(void)
@@ -210,8 +218,13 @@ void spi_dma_transfer_setup(uint8_t *tx_data, uint32_t len)
 {
     if (xSemaphoreTake(xSpiMutex, portMAX_DELAY) == pdTRUE) {
         memcpy(tx_buffer, tx_data, len);
-        tx_transfers[0].nbytes = len;
-        rx_transfers[0].nbytes = len;
+        if(len < SPI_DMA_MAX_TRANSFER_LEN) {
+            tx_transfers[0].nbytes = len;
+            rx_transfers[0].nbytes = len;
+        } else {
+            tx_transfers[0].nbytes = SPI_DMA_MAX_TRANSFER_LEN;
+            rx_transfers[0].nbytes = SPI_DMA_MAX_TRANSFER_LEN;
+        }
         bflb_dma_channel_lli_reload(dma0_ch0, tx_llipool, 1, tx_transfers, 1);
         bflb_dma_channel_lli_reload(dma0_ch1, rx_llipool, 1, rx_transfers, 1);
         xSemaphoreGive(xSpiMutex);
@@ -221,6 +234,8 @@ void spi_dma_transfer_setup(uint8_t *tx_data, uint32_t len)
 void spi_dma_transfer_start(void)
 {
     if (xSemaphoreTake(xSpiMutex, portMAX_DELAY) == pdTRUE) {
+        /* must get task handle before start spi dma */
+        xSpiDmaTransferTaskHandle = xTaskGetCurrentTaskHandle();
         bflb_dma_channel_start(dma0_ch0);
         bflb_dma_channel_start(dma0_ch1);
         xSemaphoreGive(xSpiMutex);
@@ -229,7 +244,6 @@ void spi_dma_transfer_start(void)
 
 void spi_dma_transfer_wait_for_complete(void)
 {
-    xSpiFifoTaskHandle = xTaskGetCurrentTaskHandle();
     uint32_t notifyValue = 0;
 
     while ((notifyValue & (DMA_TX_DONE_BIT | DMA_RX_DONE_BIT)) != (DMA_TX_DONE_BIT | DMA_RX_DONE_BIT)) {
