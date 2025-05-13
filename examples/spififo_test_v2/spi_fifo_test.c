@@ -43,20 +43,31 @@
 #define SPI_FIFO_SIZE (4096) /* This depends on FPGA GW implementation */
 
 #if defined(MCU_MODULE_A)
-#define read_txfifo_full() bflb_gpio_read(gpio, GPIO_PIN_12)
 #define read_rdata_valid() bflb_gpio_read(gpio, GPIO_PIN_3)
 #else
-#define read_txfifo_full() bflb_gpio_read(gpio, GPIO_PIN_1)
 #define read_rdata_valid() bflb_gpio_read(gpio, GPIO_PIN_0)
 #endif
 
 static struct bflb_device_s *spi0;
 static struct bflb_device_s *gpio;
+static struct bflb_device_s *dma0_ch0;
+static struct bflb_device_s *dma0_ch1;
 
-static volatile uint8_t data_valid = 0;
+static volatile uint8_t data_valid  = 0;
+static volatile uint8_t dma_tx_done = 0;
+static volatile uint8_t dma_rx_done = 0;
+
+static struct bflb_dma_channel_lli_pool_s tx_llipool[1];
+static struct bflb_dma_channel_lli_pool_s rx_llipool[1];
+static struct bflb_dma_channel_lli_transfer_s tx_transfers[1];
+static struct bflb_dma_channel_lli_transfer_s rx_transfers[1];
 
 static ATTR_NOCACHE_NOINIT_RAM_SECTION uint8_t tx_buffer[SPI_FIFO_SIZE];
 static ATTR_NOCACHE_NOINIT_RAM_SECTION uint8_t rx_buffer[SPI_FIFO_SIZE];
+
+/* gobal data tx/rx buffer */
+uint8_t *p_tx = tx_buffer;
+uint8_t *p_rx = rx_buffer;
 
 /*
  * Frame structure:
@@ -151,6 +162,18 @@ static void rdata_valid_isr(uint8_t pin)
 #endif
 }
 
+void dma0_ch0_isr(void *arg)
+{
+    dma_tx_done = 1;
+    //printf("spi dma tx done\r\n");
+}
+
+void dma0_ch1_isr(void *arg)
+{
+    dma_rx_done = 1;
+    //printf("spi dma rx done\r\n");
+}
+
 void spi_gpio_init(void)
 {
     gpio = bflb_device_get_by_name("gpio");
@@ -200,16 +223,116 @@ void spi_init(uint8_t baudmhz)
         .rx_fifo_threshold = 0,
     };
 
+    struct bflb_dma_channel_config_s tx_config = {
+        .direction = DMA_MEMORY_TO_PERIPH,
+        .src_req = DMA_REQUEST_NONE,
+        .dst_req = DMA_REQUEST_SPI0_TX,
+        .src_addr_inc = DMA_ADDR_INCREMENT_ENABLE,
+        .dst_addr_inc = DMA_ADDR_INCREMENT_DISABLE,
+        .src_burst_count = DMA_BURST_INCR1,
+        .dst_burst_count = DMA_BURST_INCR1,
+        .src_width = DMA_DATA_WIDTH_8BIT,
+        .dst_width = DMA_DATA_WIDTH_8BIT,
+    };
+
+    struct bflb_dma_channel_config_s rx_config = {
+        .direction = DMA_PERIPH_TO_MEMORY,
+        .src_req = DMA_REQUEST_SPI0_RX,
+        .dst_req = DMA_REQUEST_NONE,
+        .src_addr_inc = DMA_ADDR_INCREMENT_DISABLE,
+        .dst_addr_inc = DMA_ADDR_INCREMENT_ENABLE,
+        .src_burst_count = DMA_BURST_INCR1,
+        .dst_burst_count = DMA_BURST_INCR1,
+        .src_width = DMA_DATA_WIDTH_8BIT,
+        .dst_width = DMA_DATA_WIDTH_8BIT,
+    };
+
     spi0 = bflb_device_get_by_name("spi0");
     bflb_spi_init(spi0, &spi_cfg);
     bflb_spi_feature_control(spi0, SPI_CMD_SET_CS_INTERVAL, 1);
     bflb_spi_feature_control(spi0, SPI_CMD_SET_DATA_WIDTH, SPI_DATA_WIDTH_8BIT);
+    bflb_spi_link_txdma(spi0, true);
+    bflb_spi_link_rxdma(spi0, true);
+
+    dma0_ch0 = bflb_device_get_by_name("dma0_ch0");
+    dma0_ch1 = bflb_device_get_by_name("dma0_ch1");
+
+    bflb_dma_channel_init(dma0_ch0, &tx_config);
+    bflb_dma_channel_init(dma0_ch1, &rx_config);
+
+    bflb_dma_channel_irq_attach(dma0_ch0, dma0_ch0_isr, NULL);
+    bflb_dma_channel_irq_attach(dma0_ch1, dma0_ch1_isr, NULL);
+
+    tx_transfers[0].src_addr = (uint32_t)tx_buffer;
+    tx_transfers[0].dst_addr = (uint32_t)DMA_ADDR_SPI0_TDR;
+    tx_transfers[0].nbytes = 0;
+
+    rx_transfers[0].src_addr = (uint32_t)DMA_ADDR_SPI0_RDR;
+    rx_transfers[0].dst_addr = (uint32_t)rx_buffer;
+    rx_transfers[0].nbytes = 0;
 }
 
 void spi_fifo_interface_bus_init(uint8_t baudmhz)
 {
     spi_gpio_init();
     spi_init(baudmhz);
+}
+
+void spi_dma_transfer_setup(uint8_t *tx_data, uint32_t len)
+{
+    memcpy(tx_buffer, tx_data, len);
+    if(len < SPI_FIFO_SIZE) {
+        tx_transfers[0].nbytes = len;
+        rx_transfers[0].nbytes = len;
+    } else {
+        tx_transfers[0].nbytes = SPI_FIFO_SIZE;
+        rx_transfers[0].nbytes = SPI_FIFO_SIZE;
+    }
+    bflb_dma_channel_lli_reload(dma0_ch0, tx_llipool, 1, tx_transfers, 1);
+    bflb_dma_channel_lli_reload(dma0_ch1, rx_llipool, 1, rx_transfers, 1);
+}
+
+void spi_dma_transfer_read_setup(uint16_t len)
+{
+    if(len < SPI_FIFO_SIZE) {
+        tx_transfers[0].nbytes = len;
+        rx_transfers[0].nbytes = len;
+    } else {
+        printf("warning data len %d exceeds DMA buffer len %d\r\n", len, SPI_FIFO_SIZE);
+        tx_transfers[0].nbytes = SPI_FIFO_SIZE;
+        rx_transfers[0].nbytes = SPI_FIFO_SIZE;
+    }
+    bflb_dma_channel_lli_reload(dma0_ch0, tx_llipool, 1, tx_transfers, 1);
+    bflb_dma_channel_lli_reload(dma0_ch1, rx_llipool, 1, rx_transfers, 1);
+}
+
+void spi_dma_transfer_start(void)
+{
+    dma_tx_done = 0;
+    dma_rx_done = 0;
+    bflb_dma_channel_start(dma0_ch0);
+    bflb_dma_channel_start(dma0_ch1);
+}
+
+void spi_dma_transfer_wait_for_complete(void)
+{
+    while ((dma_tx_done == 0) || (dma_rx_done == 0)) {
+        bflb_mtimer_delay_ms(10);
+    }
+}
+
+void spi_dma_transfer_execute(uint8_t *tx_data, uint32_t len)
+{
+    spi_dma_transfer_setup(tx_data, len);
+    spi_dma_transfer_start();
+    spi_dma_transfer_wait_for_complete();
+}
+
+void spi_dma_transfer_read_execute(uint32_t len)
+{
+    spi_dma_transfer_read_setup(len);
+    spi_dma_transfer_start();
+    spi_dma_transfer_wait_for_complete();
 }
 
 // Support command list:
@@ -251,36 +374,30 @@ void spi_fifo_interface_bus_init(uint8_t baudmhz)
 
 void spi_ctrl_cmd_read_gw_version(void)
 {
-    uint8_t p_tx[5] = {0x06, 0x00, 0x00, 0x00, 0x00};
-    uint8_t p_rx[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
-    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 5);
+    uint8_t cmd[5] = {0x06, 0x00, 0x00, 0x00, 0x00};
+    spi_dma_transfer_execute(cmd, 5);
     printf("GW version YYMMDD = %d %d %d\r\n", p_rx[2], p_rx[3], p_rx[4]);
 }
 
 void spi_ctrl_cmd_read_chip_id(void)
 {
-    uint8_t p_tx[5] = {0x07, 0x00, 0x00, 0x00, 0x00};
-    uint8_t p_rx[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
-
-    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 5);
-
+    uint8_t cmd[5] = {0x07, 0x00, 0x00, 0x00, 0x00};
+    spi_dma_transfer_execute(cmd, 5);
     printf("Chip ID           = %X %X %X\r\n", p_rx[2], p_rx[3], p_rx[4]);
 }
 
 void spi_ctrl_cmd_reset_fifo(void)
 {
-    uint8_t p_tx[3] = {0x01, 0x00, 0x00};
-    uint8_t p_rx[3] = {0x00, 0x00, 0x00};
-    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 3);
+    uint8_t cmd[3] = {0x01, 0x00, 0x00};
+    spi_dma_transfer_execute(cmd, 3);
     printf("Reset fifo ack    = %X\r\n", p_rx[2]);
 }
 
 uint16_t spi_ctrl_cmd_read_tx_fifo_level(void)
 {
-    uint8_t p_tx[4] = {0x08, 0x00, 0x00, 0x00};
-    uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
+    uint8_t cmd[4] = {0x08, 0x00, 0x00, 0x00};
     uint16_t ret;
-    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
+    spi_dma_transfer_execute(cmd, 4);
     ret = (uint16_t)((p_rx[2] << 16) | p_rx[3]);
     printf("Tx fifo level = %d\r\n", ret);
     return ret;
@@ -288,11 +405,9 @@ uint16_t spi_ctrl_cmd_read_tx_fifo_level(void)
 
 uint16_t spi_ctrl_cmd_read_rx_fifo_level(void)
 {
-    uint8_t p_tx[4] = {0x09, 0x00, 0x00, 0x00};
-    uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
+    uint8_t cmd[4] = {0x09, 0x00, 0x00, 0x00};
     uint16_t ret;
-
-    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
+    spi_dma_transfer_execute(cmd, 4);
     ret = (uint16_t)((p_rx[2] << 16) | p_rx[3]);
     printf("Rx fifo level = %d\r\n", ret);
     return ret;
@@ -300,10 +415,9 @@ uint16_t spi_ctrl_cmd_read_rx_fifo_level(void)
 
 uint16_t spi_ctrl_read_tx_fifo_free_space(void)
 {
-    uint8_t p_tx[4] = {0x08, 0x00, 0x00, 0x00};
-    uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
+    uint8_t cmd[4] = {0x08, 0x00, 0x00, 0x00};
     uint16_t ret;
-    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
+    spi_dma_transfer_execute(cmd, 4);
     ret = (uint16_t)((p_rx[2] << 16) | p_rx[3]);
 
     if(ret < SPI_FIFO_SIZE) {
@@ -316,14 +430,6 @@ uint16_t spi_ctrl_read_tx_fifo_free_space(void)
     return ret;
 }
 
-void spi_ctrl_cmd_read_data(void)
-{
-    uint8_t p_tx[8] = {0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    uint8_t p_rx[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 8);
-    printf("Read data         = %X %X %X %X\r\n", p_rx[4], p_rx[5], p_rx[6], p_rx[7]);
-}
-
 void spi_fifo_write(uint8_t *data, uint16_t len)
 {
     frame_header_t header;
@@ -332,6 +438,14 @@ void spi_fifo_write(uint8_t *data, uint16_t len)
 
     if(len > (SPI_FIFO_SIZE - sizeof(frame_header_t) - 4)) {
         printf("Error data len is over dma buffer length\r\n");
+        return;
+    }
+
+    /* check spi tx fifo free space */
+    txfifo_free = spi_ctrl_read_tx_fifo_free_space();
+
+    if(txfifo_free < (sizeof(frame_header_t) + len)) {
+        printf("Error not enough txfifo free space\r\n");
         return;
     }
 
@@ -347,37 +461,31 @@ void spi_fifo_write(uint8_t *data, uint16_t len)
     /* copy data */
     memcpy((uint8_t *)&tx_buffer[4 + sizeof(frame_header_t)], data, len);
 
-    /* check spi tx fifo free space */
-    txfifo_free = spi_ctrl_read_tx_fifo_free_space();
-
-    if(txfifo_free < (sizeof(frame_header_t) + len)) {
-        printf("Error not enough txfifo free space\r\n");
-        return;
-    }
-
     /* execute spi fifo write data command */
-    bflb_spi_poll_exchange(spi0, tx_buffer, rx_buffer, 4 + sizeof(frame_header_t) + len);
+    spi_dma_transfer_read_execute(4 + sizeof(frame_header_t) + len);
 }
 
 void spi_fifo_read(void)
 {
     frame_header_t *header;
-    uint8_t p_tx[8] = {0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    uint8_t p_rx[8];
+    uint8_t cmd[8] = {0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    uint16_t len;
 
-    bflb_spi_poll_exchange(spi0, p_tx, p_rx, 8);
+    /* execure spi fifo read */
+    spi_dma_transfer_execute(cmd, 8);
 
     header = (frame_header_t *)&p_rx[4];
+    len = header->len;
 
     if (frame_header_check(header)) {
-        printf("Read data len = %d\r\n", header->len);
+        printf("Read data len = %d\r\n", len);
         tx_buffer[0] = 0x05;
-        bflb_spi_poll_exchange(spi0, tx_buffer, rx_buffer, header->len + 4);
+        spi_dma_transfer_read_execute(len + 4);
 
         printf("Read data     = ");
-        for(int i = 0; i < header->len; i++)
+        for(int i = 0; i < len; i++)
         {
-            printf("%2X ", rx_buffer[4 + i]);
+            printf("%2X ", p_rx[4 + i]);
         }
         printf("\r\n");
     } else {
@@ -422,7 +530,7 @@ void spi_ctrl_data_receive_loop(void)
             ping_pong();
 
             /* small delay */
-            bflb_mtimer_delay_ms(10);
+            bflb_mtimer_delay_ms(1);
 
             printf("Resend data\r\n");
 

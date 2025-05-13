@@ -7,7 +7,6 @@ void spi_ctrl_cmd_read_chip_id(void);
 void spi_ctrl_cmd_reset_fifo(void);
 void send_msg1(void);
 void send_msg2(void);
-void spi_ctrl_cmd_read_data(void);
 uint16_t spi_ctrl_cmd_read_tx_fifo_level(void);
 uint16_t spi_ctrl_cmd_read_rx_fifo_level(void);
 uint16_t spi_ctrl_read_tx_fifo_free_space(void);
