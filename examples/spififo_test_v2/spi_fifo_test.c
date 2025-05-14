@@ -398,7 +398,7 @@ uint16_t spi_ctrl_cmd_read_tx_fifo_level(void)
     uint8_t cmd[4] = {0x08, 0x00, 0x00, 0x00};
     uint16_t ret;
     spi_dma_transfer_execute(cmd, 4);
-    ret = (uint16_t)((p_rx[2] << 16) | p_rx[3]);
+    ret = (uint16_t)((p_rx[2] << 8) | p_rx[3]);
     printf("Tx fifo level = %d\r\n", ret);
     return ret;
 }
@@ -408,7 +408,7 @@ uint16_t spi_ctrl_cmd_read_rx_fifo_level(void)
     uint8_t cmd[4] = {0x09, 0x00, 0x00, 0x00};
     uint16_t ret;
     spi_dma_transfer_execute(cmd, 4);
-    ret = (uint16_t)((p_rx[2] << 16) | p_rx[3]);
+    ret = (uint16_t)((p_rx[2] << 8) | p_rx[3]);
     printf("Rx fifo level = %d\r\n", ret);
     return ret;
 }
@@ -418,7 +418,7 @@ uint16_t spi_ctrl_read_tx_fifo_free_space(void)
     uint8_t cmd[4] = {0x08, 0x00, 0x00, 0x00};
     uint16_t ret;
     spi_dma_transfer_execute(cmd, 4);
-    ret = (uint16_t)((p_rx[2] << 16) | p_rx[3]);
+    ret = (uint16_t)((p_rx[2] << 8) | p_rx[3]);
 
     if(ret < SPI_FIFO_SIZE) {
         ret = SPI_FIFO_SIZE - ret;
