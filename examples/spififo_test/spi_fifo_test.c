@@ -9,6 +9,8 @@
 /*
  * For the command list refer to the following code:
  * https://github.com/kamejoko80/litex-soc-builder/blob/main/custom_projects/test_spi_fifo_gw1n_fpga_evb.py
+ *
+ * Note: works only with SPI FIFO V1.0.0
  */
 
 /* MODULE A connection:
@@ -209,7 +211,7 @@ void spi_ctrl_cmd_read_tx_fifo_level(void)
     uint8_t p_tx[4] = {0x08, 0x00, 0x00, 0x00};
     uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
-    printf("Tx fifo level     = %d\r\n", (uint16_t)((p_rx[2] << 16) | p_rx[3]));
+    printf("Tx fifo level     = %d\r\n", (uint16_t)((p_rx[2] << 8) | p_rx[3]));
 }
 
 void spi_ctrl_cmd_read_rx_fifo_level(void)
@@ -217,7 +219,7 @@ void spi_ctrl_cmd_read_rx_fifo_level(void)
     uint8_t p_tx[4] = {0x09, 0x00, 0x00, 0x00};
     uint8_t p_rx[4] = {0x00, 0x00, 0x00, 0x00};
     bflb_spi_poll_exchange(spi0, p_tx, p_rx, 4);
-    printf("Rx fifo level     = %d\r\n", (uint16_t)((p_rx[2] << 16) | p_rx[3]));
+    printf("Rx fifo level     = %d\r\n", (uint16_t)((p_rx[2] << 8) | p_rx[3]));
 }
 
 void spi_ctrl_data_receive_loop(void)
