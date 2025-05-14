@@ -23,6 +23,8 @@ static SemaphoreHandle_t xSpiMutex;
  * For the command list refer to the following code:
  * https://github.com/kamejoko80/litex-soc-builder/blob/main/custom_projects/test_spi_fifo_gw1n_fpga_evb.py
  * https://github.com/kamejoko80/litex-soc-builder/blob/main/custom_projects/test_spi_fifo_gw1n_dynamic_clk_fpga_evb.py
+ *
+ * Note: works only with SPI FIFO V1.0.0
  */
 
 /* MODULE A connection:
@@ -334,14 +336,14 @@ void spi_ctrl_cmd_read_tx_fifo_level(void)
 {
     uint8_t p_tx[4] = {0x08, 0x00, 0x00, 0x00};
     spi_dma_transfer_execute(p_tx, 4);
-    LOG_I("Tx fifo level     = %d\r\n", (uint16_t)((rx_buffer[2] << 16) | rx_buffer[3]));
+    LOG_I("Tx fifo level     = %d\r\n", (uint16_t)((rx_buffer[2] << 8) | rx_buffer[3]));
 }
 
 void spi_ctrl_cmd_read_rx_fifo_level(void)
 {
     uint8_t p_tx[4] = {0x09, 0x00, 0x00, 0x00};
     spi_dma_transfer_execute(p_tx, 4);
-    LOG_I("Rx fifo level     = %d\r\n", (uint16_t)((rx_buffer[2] << 16) | rx_buffer[3]));
+    LOG_I("Rx fifo level     = %d\r\n", (uint16_t)((rx_buffer[2] << 8) | rx_buffer[3]));
 }
 
 static void spi_fifo_task(void *pvParameters)
