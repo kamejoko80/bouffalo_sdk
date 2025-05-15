@@ -344,13 +344,12 @@ void spi_dma_transfer_read_setup(uint16_t len)
 
 void spi_dma_transfer_start(void)
 {
-    if (xSemaphoreTake(xSpiMutex, portMAX_DELAY) == pdTRUE) {
-        /* must get task handle before start spi dma */
-        xSpiDmaTransferTaskHandle = xTaskGetCurrentTaskHandle();
-        bflb_dma_channel_start(dma0_ch0);
-        bflb_dma_channel_start(dma0_ch1);
-        xSemaphoreGive(xSpiMutex);
-    }
+    taskENTER_CRITICAL();
+    /* must get task handle before start spi dma */
+    xSpiDmaTransferTaskHandle = xTaskGetCurrentTaskHandle();
+    bflb_dma_channel_start(dma0_ch0);
+    bflb_dma_channel_start(dma0_ch1);
+    taskEXIT_CRITICAL();
 }
 
 void spi_dma_transfer_wait_for_complete(void)
@@ -430,6 +429,10 @@ uint8_t rxdata_valid(void)
 //
 //     | cmd (0x09) | dummy |
 //                          | level_h | level_l |
+//
+//  8) Read tx fifo free bytes:
+//
+//     | cmd (0x0A) | dummy |
 //
 
 void spi_ctrl_cmd_read_gw_version(void)
