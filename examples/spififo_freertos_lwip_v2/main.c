@@ -195,7 +195,7 @@ void ping_task(void *arg) {
   for (;;) {
     LOG_I("Send ping...\r\n");
     send_ping(&tgt);
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(500));
   }
 }
 
