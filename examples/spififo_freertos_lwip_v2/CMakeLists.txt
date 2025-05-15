@@ -13,6 +13,7 @@ target_sources(app PRIVATE
                gw1n.c
                spi_fifo.c
                ethernetif.c
+               ping.c
                )
 
 sdk_set_main_file(main.c)
