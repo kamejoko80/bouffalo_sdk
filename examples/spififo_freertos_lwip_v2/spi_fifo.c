@@ -1,12 +1,13 @@
+#include <stdio.h>
+#include <string.h>
 #include <FreeRTOS.h>
+#include "lwipopts_user.h"
 #include "semphr.h"
 #include "bflb_gpio.h"
 #include "bflb_spi.h"
 #include "bflb_dma.h"
 #include "bflb_mtimer.h"
 #include "board.h"
-#include <stdio.h>
-#include <string.h>
 
 #define DBG_TAG                  "SPI_FIFO"
 #define SPI_DMA_MAX_TRANSFER_LEN (2048)
@@ -24,8 +25,8 @@ static SemaphoreHandle_t xSpiMutex;
  * For the command list refer to the following code:
  * https://github.com/kamejoko80/litex-soc-builder/blob/main/custom_projects/test_spi_fifo_gw1n_fpga_evb.py
  * https://github.com/kamejoko80/litex-soc-builder/blob/main/custom_projects/test_spi_fifo_gw1n_dynamic_clk_fpga_evb.py
- * 
- * Note: This demo can only run with SPI FIFO V2.0.0 
+ *
+ * Note: This demo can only run with SPI FIFO V2.0.0
  *
  */
 
@@ -61,7 +62,7 @@ static SemaphoreHandle_t xSpiMutex;
 #define read_rdata_valid()  bflb_gpio_read(gpio, GPIO_PIN_3)
 #define read_txfifo_empty() bflb_gpio_read(gpio, GPIO_PIN_12)
 #else
-#define read_rdata_valid()  bflb_gpio_read(gpio, GPIO_PIN_0)    
+#define read_rdata_valid()  bflb_gpio_read(gpio, GPIO_PIN_0)
 #define read_txfifo_empty() bflb_gpio_read(gpio, GPIO_PIN_1)
 #endif
 
@@ -81,6 +82,9 @@ static ATTR_NOCACHE_NOINIT_RAM_SECTION uint8_t rx_buffer[SPI_FIFO_SIZE];
 /* gobal data tx/rx buffer */
 uint8_t *p_tx = tx_buffer;
 uint8_t *p_rx = rx_buffer;
+
+/* Workaround for Bouffalo SDK interrupt issue */
+volatile uint8_t module_a_first_isr = 0;
 
 /*
  * Frame structure:
@@ -184,9 +188,10 @@ void dma0_ch1_isr(void *arg)
 static void rdata_valid_isr(uint8_t pin)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    LOG_I("rdata_valid_isr\r\n");
+    //LOG_I("rdata_valid_isr\r\n");
     if(xSpiFifoTaskHandle != NULL) {
 #if defined(MCU_MODULE_A)
+        module_a_first_isr = 1; /* Workaround for Bouffalo SDK interrupt issue */
         if (pin == GPIO_PIN_3) {
             vTaskNotifyGiveFromISR(xSpiFifoTaskHandle, &xHigherPriorityTaskWoken);
             portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
@@ -215,7 +220,7 @@ void spi_gpio_init(void)
 
 #if defined(MCU_MODULE_A)
     /* txfifo_empty_a as input */
-    bflb_gpio_init(gpio, GPIO_PIN_12, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0);
+    //bflb_gpio_init(gpio, GPIO_PIN_12, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0);
 
     /* configure rdata_valid_a as external interrupt gpio */
     bflb_irq_disable(gpio->irq_num);
@@ -225,7 +230,7 @@ void spi_gpio_init(void)
     bflb_irq_enable(gpio->irq_num);
 #else
     /* txfifo_empty_b as input */
-    bflb_gpio_init(gpio, GPIO_PIN_1, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0);
+    //bflb_gpio_init(gpio, GPIO_PIN_1, GPIO_INPUT | GPIO_SMT_EN | GPIO_DRV_0);
 
     /* configure rdata_valid_b as external interrupt gpio */
     bflb_irq_disable(gpio->irq_num);
@@ -387,7 +392,7 @@ uint8_t rxdata_valid(void)
     return bflb_gpio_read(gpio, GPIO_PIN_3);
 #else
     return bflb_gpio_read(gpio, GPIO_PIN_0);
-#endif    
+#endif
 }
 
 // SPI FIFO V2.0.0 supports command list:
@@ -517,10 +522,10 @@ bool spi_fifo_write_with_check(uint8_t *data, uint16_t len)
         memcpy((uint8_t *)&tx_buffer[4 + sizeof(frame_header_t)], data, len);
         xSemaphoreGive(xSpiMutex);
     }
-    
+
     /* execute spi fifo write data command */
     spi_dma_transfer_read_execute(4 + sizeof(frame_header_t) + len);
- 
+
     return true;
 }
 
@@ -540,7 +545,7 @@ void spi_fifo_write(uint8_t *data, uint16_t len)
         memcpy((uint8_t *)&tx_buffer[4 + sizeof(frame_header_t)], data, len);
         xSemaphoreGive(xSpiMutex);
     }
-    
+
     /* execute spi fifo write data command */
     spi_dma_transfer_read_execute(4 + sizeof(frame_header_t) + len);
 }
@@ -548,7 +553,7 @@ void spi_fifo_write(uint8_t *data, uint16_t len)
 uint16_t spi_fifo_find_max_data_len(void)
 {
     uint16_t txfifo_free;
-    
+
     /* check spi tx fifo free space */
     txfifo_free = spi_ctrl_read_tx_fifo_free_space();
 
@@ -556,7 +561,7 @@ uint16_t spi_fifo_find_max_data_len(void)
         return (txfifo_free - sizeof(frame_header_t));
     } else {
         return 0;
-    }        
+    }
 }
 
 uint16_t spi_fifo_read(void)
@@ -571,9 +576,9 @@ uint16_t spi_fifo_read(void)
     if (xSemaphoreTake(xSpiMutex, portMAX_DELAY) == pdTRUE) {
         header = (frame_header_t *)&p_rx[4];
         len = header->len;
-        xSemaphoreGive(xSpiMutex);        
+        xSemaphoreGive(xSpiMutex);
     }
-    
+
     /* read data payload */
     if (frame_header_check(header)) {
         // printf("Read data len = %d\r\n", len);
@@ -597,8 +602,19 @@ uint16_t spi_fifo_read(void)
 
 extern void ethernetif_input(void *pvParameters);
 
+/*
+Task/Thread	                Priority
+FreeRTOS Timer task	           6  (configMAX_PRIORITIES - 1)
+lwIP core (tcpip_thread)	   5  (TCPIP_THREAD_PRIO)
+lwIP raw/UDP/TCP threads	   5  (DEFAULT_THREAD_PRIO)
+Net-IF input task	           4  (TCPIP_THREAD_PRIO - 1)
+Application tasks	         ≤ 3  (as you see fit)
+*/
+
+#define ETH_INPUT_TASK_PRIO  (DEFAULT_THREAD_PRIO - 1)  // = 4
+
 void ethernetif_input_task_init(void *pvParameters)
 {
     LOG_I("[OS] Starting ethernetif_input task...\r\n");
-    xTaskCreate(ethernetif_input, (char *)"ethernetif_input", 2048, pvParameters, configMAX_PRIORITIES - 2, &xSpiFifoTaskHandle);
+    xTaskCreate(ethernetif_input, (char *)"ethernetif_input", 2048, pvParameters, ETH_INPUT_TASK_PRIO, &xSpiFifoTaskHandle);
 }

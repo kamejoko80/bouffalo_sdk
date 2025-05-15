@@ -38,9 +38,8 @@
 #define TCPIP_MBOX_SIZE               64
 #define TCPIP_THREAD_STACKSIZE        4096
 #define TCPIP_THREAD_PRIO             5
-
-#define DEFAULT_THREAD_STACKSIZE      4096
 #define DEFAULT_THREAD_PRIO           5
+#define DEFAULT_THREAD_STACKSIZE      4096
 #define DEFAULT_RAW_RECVMBOX_SIZE     32
 #define DEFAULT_UDP_RECVMBOX_SIZE     64
 #define DEFAULT_TCP_RECVMBOX_SIZE     64
@@ -89,12 +88,12 @@
 
 #define LWIP_TIMEVAL_PRIVATE          0 // use sys/time.h for struct timeval
 // #define LWIP_PROVIDE_ERRNO         1
-#define LWIP_ERRNO_STDINCLUDE         1 
-#define LWIP_SOCKET_SET_ERRNO         1 
- 
-#define LWIP_NETIF_STATUS_CALLBACK    0 
-#define LWIP_NETIF_API                1 
-#define ETHARP_SUPPORT_STATIC_ENTRIES 1 
+#define LWIP_ERRNO_STDINCLUDE         1
+#define LWIP_SOCKET_SET_ERRNO         1
+
+#define LWIP_NETIF_STATUS_CALLBACK    0
+#define LWIP_NETIF_API                1
+#define ETHARP_SUPPORT_STATIC_ENTRIES 1
 
 #define LWIP_DEBUG                    1
 
