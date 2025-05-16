@@ -15,19 +15,16 @@
 #include "netif/ethernet.h"
 #include "ethernetif.h"
 
-/* ICMP test */
-/* #include "lwip/raw.h"
-#include "lwip/etharp.h"
-#include "lwip/icmp.h"
-#include "lwip/ip.h"
-#include "lwip/inet_chksum.h" */
-
 #include "ping.h"
+#include "tcp_socket.h"
 
 #define DBG_TAG "MAIN"
 #include "log.h"
 
 struct netif gnetif;
+
+//#define PING_TEST
+#define TCP_SERVER_CLIENT_TEST
 
 /* This program is running on the Sipeed M0S dock only */
 #define BOOT_PIN GPIO_PIN_2
@@ -49,6 +46,8 @@ void netif_setup_cb(void *arg) {
     netif_set_up(netif);
 
 #if defined(MCU_MODULE_B)
+
+#if defined(PING_TEST)
     /* ---- insert static ARP entry here ---- */
     ip_addr_t target_ip;
     struct eth_addr eth;
@@ -63,7 +62,20 @@ void netif_setup_cb(void *arg) {
 
     /* init icmp */
     ping_init();
+#endif /* PING_TEST */
+
+#if defined(TCP_SERVER_CLIENT_TEST)
+    tcp_client_task_init();
 #endif
+
+#else  /* MCU_MODULE_A */
+
+#if defined(TCP_SERVER_CLIENT_TEST)
+    tcp_server_task_init();
+#endif
+
+#endif /* MCU_MODULE_B */
+
 }
 
 void network_init(void)
@@ -87,6 +99,8 @@ void network_init(void)
 
     LOG_I("netif_add...\r\n");
     netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &ethernet_input);
+    //netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
+
     tcpip_callback(netif_setup_cb, &gnetif);
 }
 
@@ -117,7 +131,9 @@ int main(void)
     network_init();
 
 #if defined(MCU_MODULE_B)
+#if defined(PING_TEST)
     ping_task_init();
+#endif
 #endif
 
     vTaskStartScheduler();

@@ -14,6 +14,7 @@ target_sources(app PRIVATE
                spi_fifo.c
                ethernetif.c
                ping.c
+               tcp_socket.c
                )
 
 sdk_set_main_file(main.c)

@@ -36,10 +36,10 @@
 #define CHECKSUM_BY_HARDWARE          0
 
 #define TCPIP_MBOX_SIZE               64
-#define TCPIP_THREAD_STACKSIZE        4096
+#define TCPIP_THREAD_STACKSIZE        2048
 #define TCPIP_THREAD_PRIO             5
 #define DEFAULT_THREAD_PRIO           5
-#define DEFAULT_THREAD_STACKSIZE      4096
+#define DEFAULT_THREAD_STACKSIZE      2048
 #define DEFAULT_RAW_RECVMBOX_SIZE     32
 #define DEFAULT_UDP_RECVMBOX_SIZE     64
 #define DEFAULT_TCP_RECVMBOX_SIZE     64
@@ -57,6 +57,13 @@
 #define MEM_MIN_TCP                   1024
 #define MEM_MIN                       MEM_MIN_TCP
 #define MEM_ALIGNMENT                 4
+
+#define MEMP_NUM_SYS_TIMEOUT          16
+
+#define MEMP_NUM_TCP_PCB              8
+#define MEMP_NUM_TCP_SEG              16
+#define PBUF_POOL_SIZE                32
+#define MEMP_NUM_NETCONN              8
 
 #ifdef LWIP_HEAP_SIZE
 #define MEM_SIZE LWIP_HEAP_SIZE

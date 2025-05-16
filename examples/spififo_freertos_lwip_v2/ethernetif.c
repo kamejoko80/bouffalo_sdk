@@ -254,7 +254,7 @@ struct pbuf *low_level_input(struct netif *netif)
 
     /* spi fifo data receive */
     len = spi_fifo_read();
-    LOG_I("receive len = %d\r\n", len);
+    //LOG_I("receive len = %d\r\n", len);
 
     if (len > 0) {
         /* We allocate a pbuf chain of pbufs from the Lwip buffer pool */
