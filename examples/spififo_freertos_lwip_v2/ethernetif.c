@@ -182,6 +182,7 @@ void low_level_init(struct netif *netif)
 /* Workaround for Bouffalo SDK interrupt issue */
 extern volatile uint8_t module_a_first_isr;
 
+#if 0
 err_t low_level_output(struct netif *netif, struct pbuf *p) {
     struct pbuf *q;
     uint16_t bytes_available;
@@ -218,7 +219,7 @@ err_t low_level_output(struct netif *netif, struct pbuf *p) {
 
         while (remaining > 0) {
             // Check available FIFO space
-            bytes_available = spi_fifo_find_max_data_len();
+            bytes_available = spi_ctrl_read_tx_fifo_free_bytes();
             //LOG_I("bytes_available %d\r\n", bytes_available);
 
             if (bytes_available == 0) {
@@ -230,8 +231,8 @@ err_t low_level_output(struct netif *netif, struct pbuf *p) {
             // Send the minimum of remaining data or available buffer space
             uint16_t to_send = (remaining < bytes_available) ? remaining : bytes_available;
 
-            //LOG_I("spi_fifo_write\r\n");
-            spi_fifo_write(data_ptr + offset, to_send);
+            //LOG_I("spi_fifo_write_data\r\n");
+            spi_fifo_write_data(data_ptr + offset, to_send);
 
             remaining -= to_send;
             offset += to_send;
@@ -244,6 +245,58 @@ err_t low_level_output(struct netif *netif, struct pbuf *p) {
 
     return ERR_OK;
 }
+#else
+
+err_t low_level_output(struct netif *netif, struct pbuf *p) {
+    size_t frame_len;
+    uint16_t free_space;
+
+#if defined(MCU_MODULE_A)
+    /*
+     * Workaround for Bouffalo SDK interrupt issue:
+     *
+     * With FreeRTOS, interrupt works only if it has been initialized in a task/thread context
+     * If an external GPIO interrupt has been triggered before initializing interrupt so the
+     * gpio isr will be never called event there are some further interrupt triggers on the gpio.
+     *
+     * In this demo, after configuring FPGA, module A runs first and LWIP send an ARP message but at this time
+     * module B has not yet initialized interrupt, that caused gpio isr will be never called after that
+     *
+     * Workaround: module A can send message after module B is ready (interrupt has been already initialized)
+     *
+     */
+    if(module_a_first_isr == 0) {
+        return ERR_OK;
+    }
+#endif
+
+    frame_len = p->tot_len;
+    free_space = spi_ctrl_read_tx_fifo_free_bytes();
+
+    /* Not enough room right now? Tell lwIP to retry later. */
+    if (free_space < frame_len) {
+        return ERR_MEM;
+    }
+
+    spi_fifo_write_prepare(frame_len);
+
+    /* Flatten the pbuf chain into a contiguous buffer */
+    {
+        size_t offset = 0;
+        for (struct pbuf *q = p; q != NULL; q = q->next) {
+            memcpy((uint8_t *)&p_tx[4 + 4 + offset], q->payload, q->len);
+            offset += q->len;
+        }
+    }
+
+    /* Push it out via SPI DMA in one burst */
+    spi_fifo_write_execute(frame_len);
+
+    return ERR_OK;
+}
+
+#endif
+
 
 struct pbuf *low_level_input(struct netif *netif)
 {

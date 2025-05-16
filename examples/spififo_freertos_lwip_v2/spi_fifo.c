@@ -476,7 +476,7 @@ uint16_t spi_ctrl_cmd_read_rx_fifo_level(void)
     return ret;
 }
 
-uint16_t spi_ctrl_read_tx_fifo_free_space(void)
+uint16_t spi_ctrl_read_tx_fifo_free_bytes(void)
 {
     uint8_t cmd[4] = {0x0A, 0x00, 0x00, 0x00};
     uint16_t ret;
@@ -484,6 +484,20 @@ uint16_t spi_ctrl_read_tx_fifo_free_space(void)
     ret = (uint16_t)((p_rx[2] << 8) | p_rx[3]);
     //printf("Tx fifo free space = %d\r\n", ret);
     return ret;
+}
+
+uint16_t spi_fifo_get_tx_data_bytes(void)
+{
+    uint16_t txfifo_free;
+
+    /* check spi tx fifo free space */
+    txfifo_free = spi_ctrl_read_tx_fifo_free_bytes();
+
+    if( txfifo_free >= sizeof(frame_header_t)) {
+        return (txfifo_free - sizeof(frame_header_t));
+    } else {
+        return 0;
+    }
 }
 
 bool spi_fifo_write_with_check(uint8_t *data, uint16_t len)
@@ -498,7 +512,7 @@ bool spi_fifo_write_with_check(uint8_t *data, uint16_t len)
     }
 
     /* check spi tx fifo free space */
-    txfifo_free = spi_ctrl_read_tx_fifo_free_space();
+    txfifo_free = spi_ctrl_read_tx_fifo_free_bytes();
 
     if(txfifo_free < (sizeof(frame_header_t) + len)) {
         printf("Error not enough txfifo free space\r\n");
@@ -523,7 +537,7 @@ bool spi_fifo_write_with_check(uint8_t *data, uint16_t len)
     return true;
 }
 
-void spi_fifo_write(uint8_t *data, uint16_t len)
+void spi_fifo_write_data(uint8_t *data, uint16_t len)
 {
     frame_header_t header;
     uint8_t wr_cmd[4] = {0x04, 0x00, 0x00, 0x00};
@@ -544,18 +558,26 @@ void spi_fifo_write(uint8_t *data, uint16_t len)
     spi_dma_transfer_read_execute(4 + sizeof(frame_header_t) + len);
 }
 
-uint16_t spi_fifo_find_max_data_len(void)
+void spi_fifo_write_prepare(uint16_t len)
 {
-    uint16_t txfifo_free;
+    frame_header_t header;
+    uint8_t wr_cmd[4] = {0x04, 0x00, 0x00, 0x00};
 
-    /* check spi tx fifo free space */
-    txfifo_free = spi_ctrl_read_tx_fifo_free_space();
+    if (xSemaphoreTake(xSpiMutex, portMAX_DELAY) == pdTRUE) {
+        /* create frame header */
+        frame_header_create(&header, len);
+        /* copy spi fifo command */
+        memcpy((uint8_t *)&tx_buffer[0], wr_cmd, 4);
+        /* copy header */
+        memcpy((uint8_t *)&tx_buffer[4], (uint8_t *)& header, sizeof(frame_header_t));
+        xSemaphoreGive(xSpiMutex);
+    }   
+}
 
-    if( txfifo_free >= sizeof(frame_header_t)) {
-        return (txfifo_free - sizeof(frame_header_t));
-    } else {
-        return 0;
-    }
+void spi_fifo_write_execute(uint16_t len)
+{
+    /* execute spi fifo write data command */
+    spi_dma_transfer_read_execute(4 + sizeof(frame_header_t) + len);    
 }
 
 uint16_t spi_fifo_read(void)

@@ -10,8 +10,8 @@
 #include "log.h"
 
 #define THROUGHPUT_TCP_PORT  5001      /* TCP port for test */
-#define TEST_DURATION_MS     8000      /* run each test for 2 seconds */
-#define SEND_BUFFER_SIZE     1024      /* bytes per send() */
+#define TEST_DURATION_MS     2000      /* run each test for 2 seconds */
+#define SEND_BUFFER_SIZE     2048      /* bytes per send() */
 
 #define TCP_CLIENT_PRIO      (DEFAULT_THREAD_PRIO-2)  // = 3
 #define TCP_SERVER_PRIO      (DEFAULT_THREAD_PRIO-2)  // = 3
@@ -131,7 +131,7 @@ void tcp_server_task_init(void)
 void tcp_client_task_init(void)
 {
     static ip_addr_t server_ip;
-    
+
     LOG_I("tcp_client_task_init\r\n");
     IP4_ADDR(&server_ip, 192,168,1,2);
     xTaskCreate(tcp_client_task, "tcp_cli", 2048, &server_ip, TCP_CLIENT_PRIO, NULL);
