@@ -11,7 +11,7 @@
 
 #define THROUGHPUT_TCP_PORT  5001      /* TCP port for test */
 #define TEST_DURATION_MS     2000      /* run each test for 2 seconds */
-#define SEND_BUFFER_SIZE     1024      /* bytes per send() */
+#define SEND_BUFFER_SIZE     1024      /* bytes per send() must be <= 1024 */
 
 #define TCP_CLIENT_PRIO      (DEFAULT_THREAD_PRIO-2)  // = 3
 #define TCP_SERVER_PRIO      (DEFAULT_THREAD_PRIO-2)  // = 3
