@@ -11,7 +11,7 @@
 
 #define THROUGHPUT_TCP_PORT  5001      /* TCP port for test */
 #define TEST_DURATION_MS     2000      /* run each test for 2 seconds */
-#define SEND_BUFFER_SIZE     2048      /* bytes per send() */
+#define SEND_BUFFER_SIZE     1024      /* bytes per send() */
 
 #define TCP_CLIENT_PRIO      (DEFAULT_THREAD_PRIO-2)  // = 3
 #define TCP_SERVER_PRIO      (DEFAULT_THREAD_PRIO-2)  // = 3
@@ -94,14 +94,6 @@ static void tcp_client_task(void *arg) {
             continue;
         }
 
-        LOG_I("Client: connecting to %s\r\n", ipaddr_ntoa(server_ip));
-        if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-            LOG_E("Client: connect() fail\r\n");
-            closesocket(sock);
-            vTaskDelay(pdMS_TO_TICKS(1000));
-            continue;
-        }
-
         /************************************************************************
          * KNOWN ISSUE:
          *  1) Module A send ACK TCP/IP frame but right before module B is
@@ -114,18 +106,19 @@ static void tcp_client_task(void *arg) {
 
         /************************************************************************
          * THIS IS THE MAGIC FOR A WORKAROUND:
-         *   1) Shrink send-buffer to 512 bytes (one MSS)
-         *   2) Turn off Nagle (TCP_NODELAY) so we don't coalesce writes
-         * After this, send() will block whenever its internal 512 B buffer
-         * is full—and only return once the remote side ACKs and frees room.
+         * Add definitions in lwipopts_user.h
+         *   #define TCP_MSS                       1024                         // limit each segment to 1024 bytes
+         *   #define TCP_SND_BUF                   (2*TCP_MSS)                  // total send-buffer space
+         *   #define TCP_SND_QUEUELEN              (4 * TCP_SND_BUF / TCP_MSS)  // number of segments in queue
+         *
          ************************************************************************/
-        {
-            int sndbuf = 512;
-            setsockopt(sock, SOL_SOCKET, SO_SNDBUF,
-                       &sndbuf, sizeof(sndbuf));
-            int flag = 1;
-            setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
-                       &flag, sizeof(flag));
+
+        LOG_I("Client: connecting to %s\r\n", ipaddr_ntoa(server_ip));
+        if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+            LOG_E("Client: connect() fail\r\n");
+            closesocket(sock);
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            continue;
         }
 
         uint32_t start = sys_now();
@@ -133,8 +126,8 @@ static void tcp_client_task(void *arg) {
 
         while ((sys_now() - start) < TEST_DURATION_MS) {
             /* now blocking: this send() will wait here
-               until the prior 512B segment is ACKed */
-            int ret = send(sock, buf, 512, 0);
+               until the prior SEND_BUFFER_SIZE segment is ACKed */
+            int ret = send(sock, buf, SEND_BUFFER_SIZE, 0);
             if (ret < 0) {
                 LOG_W("Client: send() error %d\r\n", errno);
                 break;

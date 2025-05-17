@@ -35,14 +35,14 @@
 #define WITH_RTOS                     1
 #define CHECKSUM_BY_HARDWARE          0
 
-#define TCPIP_MBOX_SIZE               64
+#define TCPIP_MBOX_SIZE               32
 #define TCPIP_THREAD_STACKSIZE        2048
 #define TCPIP_THREAD_PRIO             5
 #define DEFAULT_THREAD_PRIO           5
 #define DEFAULT_THREAD_STACKSIZE      2048
 #define DEFAULT_RAW_RECVMBOX_SIZE     32
-#define DEFAULT_UDP_RECVMBOX_SIZE     64
-#define DEFAULT_TCP_RECVMBOX_SIZE     64
+#define DEFAULT_UDP_RECVMBOX_SIZE     32
+#define DEFAULT_TCP_RECVMBOX_SIZE     32
 #define DEFAULT_ACCEPTMBOX_SIZE       32
 
 #define LWIP_NETIF_LOOPBACK           1
@@ -62,8 +62,28 @@
 
 #define MEMP_NUM_TCP_PCB              8
 #define MEMP_NUM_TCP_SEG              16
-#define PBUF_POOL_SIZE                32
+#define PBUF_POOL_SIZE                16
 #define MEMP_NUM_NETCONN              8
+
+/************************************************************************
+ * KNOWN ISSUE:
+ *  1) Module A send ACK TCP/IP frame but right before module B is
+ *     sending new package data.
+ *  2) In module B, event there is an rxdata_valid interrupt event
+ *     but SPI resource has been acquired for send() before, dead lock happened.
+ *  3) Summary module B didn't read ACK frame from module B, next module A read
+ *     then the tx fifo data bytes of module A are not free properly.
+ *
+ *     See the definitions bellow:
+ *
+ ************************************************************************/
+
+#define TCP_MSS                       1024                         /* limit each segment to 1024 bytes */
+#define TCP_SND_BUF                   (2*TCP_MSS)                  /* total send-buffer space */
+#define TCP_SND_QUEUELEN              (4 * TCP_SND_BUF / TCP_MSS)  /* number of segments in queue */
+
+/************************************************************************
+ ************************************************************************/
 
 #ifdef LWIP_HEAP_SIZE
 #define MEM_SIZE LWIP_HEAP_SIZE
