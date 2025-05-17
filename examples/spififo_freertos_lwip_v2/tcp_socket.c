@@ -102,15 +102,46 @@ static void tcp_client_task(void *arg) {
             continue;
         }
 
+        /************************************************************************
+         * KNOWN ISSUE:
+         *  1) Module A send ACK TCP/IP frame but right before module B is
+         *     sending new package data.
+         *  2) In module B, event there is an rxdata_valid interrupt event
+         *     but SPI resource has been acquired for send() before, dead lock happened.
+         *  3) Summary module B didn't read ACK frame from module B, next module A read
+         *     then the tx fifo data bytes of module A are not free properly.
+         ************************************************************************/
+
+        /************************************************************************
+         * THIS IS THE MAGIC FOR A WORKAROUND:
+         *   1) Shrink send-buffer to 512 bytes (one MSS)
+         *   2) Turn off Nagle (TCP_NODELAY) so we don't coalesce writes
+         * After this, send() will block whenever its internal 512 B buffer
+         * is full—and only return once the remote side ACKs and frees room.
+         ************************************************************************/
+        {
+            int sndbuf = 512;
+            setsockopt(sock, SOL_SOCKET, SO_SNDBUF,
+                       &sndbuf, sizeof(sndbuf));
+            int flag = 1;
+            setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
+                       &flag, sizeof(flag));
+        }
+
         uint32_t start = sys_now();
         uint32_t total = 0;
+
         while ((sys_now() - start) < TEST_DURATION_MS) {
-            //LOG_I("client sent! %d\r\n", sys_now() - start);
-            vTaskDelay(pdMS_TO_TICKS(1)); /* If client sends to fast then sever rx will die */
-            int ret = send(sock, buf, SEND_BUFFER_SIZE, 0);
-            if (ret < 0) break;
+            /* now blocking: this send() will wait here
+               until the prior 512B segment is ACKed */
+            int ret = send(sock, buf, 512, 0);
+            if (ret < 0) {
+                LOG_W("Client: send() error %d\r\n", errno);
+                break;
+            }
             total += ret;
         }
+
         uint32_t elapsed = sys_now() - start;
         float mbps = ((float)total * 8.0f) / ((float)elapsed * 1000.0f);
         LOG_I("Client: sent %u bytes in %ums → %.2f Mbps\r\n",
