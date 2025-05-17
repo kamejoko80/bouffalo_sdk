@@ -52,17 +52,13 @@
 #define LWIP_CHKSUM_ALGORITHM         3
 #define LWIP_TCPIP_CORE_LOCKING_INPUT 1
 
-//#define PBUF_LINK_ENCAPSULATION_HLEN  388
-
-#define MEM_MIN_TCP                   1024
-#define MEM_MIN                       MEM_MIN_TCP
+#define MEM_SIZE                      8192
 #define MEM_ALIGNMENT                 4
 
 #define MEMP_NUM_SYS_TIMEOUT          16
-
 #define MEMP_NUM_TCP_PCB              8
-#define MEMP_NUM_TCP_SEG              16
-#define PBUF_POOL_SIZE                16
+#define MEMP_NUM_TCP_SEG              8
+#define PBUF_POOL_SIZE                8
 #define MEMP_NUM_NETCONN              8
 
 /************************************************************************
@@ -78,22 +74,12 @@
  *
  ************************************************************************/
 
-#define TCP_MSS                       1024                         /* limit each segment to 1024 bytes */
+#define TCP_MSS                       2048                         /* limit each segment to 1024 bytes */
 #define TCP_SND_BUF                   (2*TCP_MSS)                  /* total send-buffer space */
 #define TCP_SND_QUEUELEN              (4 * TCP_SND_BUF / TCP_MSS)  /* number of segments in queue */
 
 /************************************************************************
  ************************************************************************/
-
-#ifdef LWIP_HEAP_SIZE
-#define MEM_SIZE LWIP_HEAP_SIZE
-#else
-#if MEM_MIN > 8192
-#define MEM_SIZE MEM_MIN
-#else
-#define MEM_SIZE 8192
-#endif
-#endif
 
 #define LWIP_RAW                      1
 #define LWIP_ICMP                     1
