@@ -38,8 +38,9 @@
 #define TCPIP_MBOX_SIZE               32
 #define TCPIP_THREAD_STACKSIZE        2048
 #define TCPIP_THREAD_PRIO             5
-#define DEFAULT_THREAD_PRIO           5
+
 #define DEFAULT_THREAD_STACKSIZE      2048
+#define DEFAULT_THREAD_PRIO           5
 #define DEFAULT_RAW_RECVMBOX_SIZE     32
 #define DEFAULT_UDP_RECVMBOX_SIZE     32
 #define DEFAULT_TCP_RECVMBOX_SIZE     32
@@ -52,14 +53,17 @@
 #define LWIP_CHKSUM_ALGORITHM         3
 #define LWIP_TCPIP_CORE_LOCKING_INPUT 1
 
-#define MEM_SIZE                      8192
-#define MEM_ALIGNMENT                 4
+#define PBUF_LINK_ENCAPSULATION_HLEN  0
 
-#define MEMP_NUM_SYS_TIMEOUT          16
-#define MEMP_NUM_TCP_PCB              8
-#define MEMP_NUM_TCP_SEG              8
-#define PBUF_POOL_SIZE                8
-#define MEMP_NUM_NETCONN              8
+#define MAC_TXQ_DEPTH                 2 /* FPGA TX_FIFO_SIZE / TCP_MSS */
+#define MAC_RXQ_DEPTH                 2 /* FPGA RX_FIFO_SIZE / TCP_MSS */
+
+#define IP_REASS_MAX_PBUFS            (2 * MAC_RXQ_DEPTH - 2)
+
+#define MEMP_NUM_NETBUF               32
+#define MEMP_NUM_NETCONN              16
+#define MEMP_NUM_UDP_PCB              16
+#define MEMP_NUM_REASSDATA            LWIP_MIN((IP_REASS_MAX_PBUFS), 5)
 
 /************************************************************************
  * KNOWN ISSUE:
@@ -70,16 +74,27 @@
  *  3) Summary module B didn't read ACK frame from module B, next module A read
  *     then the tx fifo data bytes of module A are not free properly.
  *
- *     See the definitions bellow:
+ *     Define the TCP_MSS = MTU - (IPv4 header (20 bytes) + TCP header (20 bytes))
+ *     FPGA TX_FIFO_SIZE, RX_FIFO_SIZE should be multiple of TCP_MSS
  *
  ************************************************************************/
 
-#define TCP_MSS                       2048                         /* limit each segment to 1024 bytes */
-#define TCP_SND_BUF                   (2*TCP_MSS)                  /* total send-buffer space */
-#define TCP_SND_QUEUELEN              (4 * TCP_SND_BUF / TCP_MSS)  /* number of segments in queue */
+#define TCP_MSS                       2048
+#define TCP_WND                       (2 * MAC_RXQ_DEPTH * TCP_MSS)
+#define TCP_SND_BUF                   (4 * TCP_MSS)
 
-/************************************************************************
- ************************************************************************/
+#define TCP_QUEUE_OOSEQ               1
+#define MEMP_NUM_SYS_TIMEOUT          16
+#define MEMP_NUM_TCP_PCB              8
+#define MEMP_NUM_TCP_SEG              ((4 * TCP_SND_BUF) / TCP_MSS)
+#define MEMP_NUM_PBUF                 (TCP_SND_BUF / TCP_MSS)
+#define PBUF_POOL_SIZE                8
+#define LWIP_WND_SCALE                1
+#define TCP_RCV_SCALE                 2
+#define TCP_SNDLOWAT                  LWIP_MIN(LWIP_MAX(((TCP_SND_BUF) / 4), (2 * TCP_MSS) + 1), (TCP_SND_BUF)-1)
+
+#define MEM_SIZE                      (8 * 1024)
+#define MEM_ALIGNMENT                 4
 
 #define LWIP_RAW                      1
 #define LWIP_ICMP                     1
