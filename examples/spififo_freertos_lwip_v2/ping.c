@@ -121,15 +121,17 @@ void ping_task(void *arg) {
   ip_addr_t tgt;
   IP4_ADDR(&tgt, 192, 168 , 1 ,2);
 
-  for (;;) {
+  for (int i=0; i<10 ; i++) {
     LOG_I("Send ping...\r\n");
     send_ping(&tgt);
     vTaskDelay(pdMS_TO_TICKS(500));
   }
+
+  vTaskDelete(NULL);
 }
 
 void ping_task_init(void)
 {
     LOG_I("[OS] Starting ping_task...\r\n");
-    xTaskCreate(ping_task, "ping_task", 1024, NULL, configMAX_PRIORITIES - 4, NULL);
+    xTaskCreate(ping_task, "ping_task", 4096, NULL, (DEFAULT_THREAD_PRIO - 4), NULL);
 }

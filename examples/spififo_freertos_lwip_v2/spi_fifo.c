@@ -433,6 +433,7 @@ uint8_t rxdata_valid(void)
 //  8) Read tx fifo free bytes:
 //
 //     | cmd (0x0A) | dummy |
+//                          | count_h | count_l |
 //
 
 void spi_ctrl_cmd_read_gw_version(void)
@@ -571,13 +572,13 @@ void spi_fifo_write_prepare(uint16_t len)
         /* copy header */
         memcpy((uint8_t *)&tx_buffer[4], (uint8_t *)& header, sizeof(frame_header_t));
         xSemaphoreGive(xSpiMutex);
-    }   
+    }
 }
 
 void spi_fifo_write_execute(uint16_t len)
 {
     /* execute spi fifo write data command */
-    spi_dma_transfer_read_execute(4 + sizeof(frame_header_t) + len);    
+    spi_dma_transfer_read_execute(4 + sizeof(frame_header_t) + len);
 }
 
 uint16_t spi_fifo_read(void)
@@ -619,15 +620,16 @@ uint16_t spi_fifo_read(void)
 extern void ethernetif_input(void *pvParameters);
 
 /*
-Task/Thread	                Priority
-FreeRTOS Timer task	           6  (configMAX_PRIORITIES - 1)
-lwIP core (tcpip_thread)	   5  (TCPIP_THREAD_PRIO)
-lwIP raw/UDP/TCP threads	   5  (DEFAULT_THREAD_PRIO)
-Net-IF input task	           4  (TCPIP_THREAD_PRIO - 1)
-Application tasks	         ≤ 3  (as you see fit)
+Task/Thread	                   Priority
+FreeRTOS Timer task	              9       (configMAX_PRIORITIES - 1)
+lwIP core (tcpip_thread)	      8       (TCPIP_THREAD_PRIO)
+lwIP raw/UDP/TCP threads	      8       (DEFAULT_THREAD_PRIO)
+Net-IF input task	              7       (DEFAULT_THREAD_PRIO - 1)
+Uart Shell	                      6       (configMAX_PRIORITIES - 4)
+Application tasks	            ≤ 5       (DEFAULT_THREAD_PRIO - 3)
 */
 
-#define ETH_INPUT_TASK_PRIO  (DEFAULT_THREAD_PRIO - 1)  // = 4
+#define ETH_INPUT_TASK_PRIO  (DEFAULT_THREAD_PRIO - 1)  // = 7
 
 void ethernetif_input_task_init(void *pvParameters)
 {

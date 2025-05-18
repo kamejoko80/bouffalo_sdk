@@ -21,14 +21,20 @@
 #define DBG_TAG "MAIN"
 #include "log.h"
 
+#define SHELL_THREAD_PRIO (configMAX_PRIORITIES - 4)
+#include "shell.h"
+
 struct netif gnetif;
 
-//#define PING_TEST
+#define PING_TEST
 #define TCP_SERVER_CLIENT_TEST
 
 /* This program is running on the Sipeed M0S dock only */
 #define BOOT_PIN GPIO_PIN_2
 static struct bflb_device_s *gpio;
+
+static struct bflb_device_s *uart0;
+extern void shell_init_with_task(struct bflb_device_s *shell);
 
 static void gpio_button_init(void)
 {
@@ -64,11 +70,18 @@ void netif_setup_cb(void *arg) {
     ping_init();
 #endif /* PING_TEST */
 
-#if defined(TCP_SERVER_CLIENT_TEST)
-    tcp_client_task_init();
-#endif
-
 #else  /* MCU_MODULE_A */
+    /* ---- insert static ARP entry here ---- */
+    ip_addr_t target_ip;
+    struct eth_addr eth;
+    IP4_ADDR(&target_ip, 192,168,1,3);
+    eth.addr[0] = 0x00;
+    eth.addr[1] = 0x15;
+    eth.addr[2] = 0x5D;
+    eth.addr[3] = 0x25;
+    eth.addr[4] = 0xA7;
+    eth.addr[5] = 0x86;
+    etharp_add_static_entry(&target_ip, &eth);
 
 #if defined(TCP_SERVER_CLIENT_TEST)
     tcp_server_task_init();
@@ -127,17 +140,46 @@ int main(void)
     while(!bflb_gpio_read(gpio, BOOT_PIN));
     while(bflb_gpio_read(gpio, BOOT_PIN));
 
+    /* init uart shell */
+    uart0 = bflb_device_get_by_name("uart0");
+    shell_init_with_task(uart0);
+
     LOG_I("network init...\r\n");
     network_init();
-
-#if defined(MCU_MODULE_B)
-#if defined(PING_TEST)
-    ping_task_init();
-#endif
-#endif
 
     vTaskStartScheduler();
 
     while (1) {
     }
 }
+
+#if defined(MCU_MODULE_B)
+extern void spi_ctrl_cmd_reset_fifo(void);
+int cmd_reset_spi_fifo(int argc, char **argv)
+{
+    printf("reset spi fifo...\r\n");
+    spi_ctrl_cmd_reset_fifo();
+    return 0;
+}
+SHELL_CMD_EXPORT_ALIAS(cmd_reset_spi_fifo, reset_spi_fifo, reset spi fifo);
+
+#if defined(PING_TEST)
+int cmd_ping_test(int argc, char **argv)
+{
+    printf("ping test task init\r\n");
+    ping_task_init();
+    return 0;
+}
+SHELL_CMD_EXPORT_ALIAS(cmd_ping_test, ping_test, ping test);
+#endif
+
+#if defined(TCP_SERVER_CLIENT_TEST)
+int cmd_tcp_client_test(int argc, char **argv)
+{
+    tcp_client_task_init();
+    return 0;
+}
+SHELL_CMD_EXPORT_ALIAS(cmd_tcp_client_test, tcp_client_test, tcp client test);
+#endif
+
+#endif

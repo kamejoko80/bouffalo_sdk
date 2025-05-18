@@ -23,6 +23,8 @@ extern uint8_t *p_tx;
 extern uint8_t *p_rx;
 extern void ethernetif_input_task_init(void *pvParameters);
 
+static SemaphoreHandle_t xLowLevelInputMutex = NULL;
+
 void dump_eth_frame(struct pbuf *p) {
     if (!p || p->len < SIZEOF_ETH_HDR) {
         LOG_W("Invalid Ethernet frame\r\n");
@@ -166,7 +168,7 @@ void low_level_init(struct netif *netif)
 #endif
 
     /* maximum transfer unit */
-    netif->mtu = 1500;
+    netif->mtu = 2048;
 
 #if LWIP_ARP
     netif->flags |= NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP;
@@ -181,71 +183,6 @@ void low_level_init(struct netif *netif)
 
 /* Workaround for Bouffalo SDK interrupt issue */
 extern volatile uint8_t module_a_first_isr;
-
-#if 0
-err_t low_level_output(struct netif *netif, struct pbuf *p) {
-    struct pbuf *q;
-    uint16_t bytes_available;
-    uint16_t offset = 0;
-    uint8_t *data_ptr;
-
-    //LOG_I("low_level_output\r\n");
-
-#if defined(MCU_MODULE_A)
-    /*
-     * Workaround for Bouffalo SDK interrupt issue:
-     *
-     * With FreeRTOS, interrupt works only if it has been initialized in a task/thread context
-     * If an external GPIO interrupt has been triggered before initializing interrupt so the
-     * gpio isr will be never called event there are some further interrupt triggers on the gpio.
-     *
-     * In this demo, after configuring FPGA, module A runs first and LWIP send an ARP message but at this time
-     * module B has not yet initialized interrupt, that caused gpio isr will be never called after that
-     *
-     * Workaround: module A can send message after module B is ready (interrupt has been already initialized)
-     *
-     */
-    if(module_a_first_isr == 0) {
-        return ERR_OK;
-    }
-#endif
-
-    // dump_eth_frame(p);
-
-    q = p;
-    while (q != NULL) {
-        data_ptr = (uint8_t *)q->payload;
-        uint16_t remaining = q->len;
-
-        while (remaining > 0) {
-            // Check available FIFO space
-            bytes_available = spi_ctrl_read_tx_fifo_free_bytes();
-            //LOG_I("bytes_available %d\r\n", bytes_available);
-
-            if (bytes_available == 0) {
-                LOG_I("wait for spi tx fifo free\r\n");
-                vTaskDelay(pdMS_TO_TICKS(10));
-                continue;
-            }
-
-            // Send the minimum of remaining data or available buffer space
-            uint16_t to_send = (remaining < bytes_available) ? remaining : bytes_available;
-
-            //LOG_I("spi_fifo_write_data\r\n");
-            spi_fifo_write_data(data_ptr + offset, to_send);
-
-            remaining -= to_send;
-            offset += to_send;
-        }
-
-        // Move to next pbuf in chain
-        q = q->next;
-        offset = 0; // Reset offset for new buffer
-    }
-
-    return ERR_OK;
-}
-#else
 
 err_t low_level_output(struct netif *netif, struct pbuf *p) {
     size_t frame_len;
@@ -270,33 +207,37 @@ err_t low_level_output(struct netif *netif, struct pbuf *p) {
     }
 #endif
 
-    frame_len = p->tot_len;
-    free_space = spi_ctrl_read_tx_fifo_free_bytes();
+    /* Dirty mutex to avoid spi fifo concurrent tx/rx */
+    if (xSemaphoreTake(xLowLevelInputMutex, portMAX_DELAY) == pdTRUE) {
 
-    /* Not enough room right now? Tell lwIP to retry later. */
-    if (free_space < frame_len) {
-        return ERR_MEM;
-    }
+        frame_len = p->tot_len;
+        free_space = spi_ctrl_read_tx_fifo_free_bytes();
 
-    spi_fifo_write_prepare(frame_len);
-
-    /* Flatten the pbuf chain into a contiguous buffer */
-    {
-        size_t offset = 0;
-        for (struct pbuf *q = p; q != NULL; q = q->next) {
-            memcpy((uint8_t *)&p_tx[4 + 4 + offset], q->payload, q->len);
-            offset += q->len;
+        /* Not enough room right now? Tell lwIP to retry later. */
+        if (free_space < frame_len) {
+            xSemaphoreGive(xLowLevelInputMutex);
+            return ERR_MEM;
         }
-    }
 
-    /* Push it out via SPI DMA in one burst */
-    spi_fifo_write_execute(frame_len);
+        spi_fifo_write_prepare(frame_len);
+
+        /* Flatten the pbuf chain into a contiguous buffer */
+        {
+            size_t offset = 0;
+            for (struct pbuf *q = p; q != NULL; q = q->next) {
+                memcpy((uint8_t *)&p_tx[4 + 4 + offset], q->payload, q->len);
+                offset += q->len;
+            }
+        }
+
+        /* Push it out via SPI DMA in one burst */
+        spi_fifo_write_execute(frame_len);
+
+        xSemaphoreGive(xLowLevelInputMutex);
+    }
 
     return ERR_OK;
 }
-
-#endif
-
 
 struct pbuf *low_level_input(struct netif *netif)
 {
@@ -305,24 +246,29 @@ struct pbuf *low_level_input(struct netif *netif)
     struct pbuf *q = NULL;
     uint16_t offset;
 
-    /* spi fifo data receive */
-    len = spi_fifo_read();
-    //LOG_I("receive len = %d\r\n", len);
+    /* Dirty mutex to avoid spi fifo concurrent tx/rx */
+    if (xSemaphoreTake(xLowLevelInputMutex, portMAX_DELAY) == pdTRUE) {
+        /* spi fifo data receive */
+        len = spi_fifo_read();
+        //LOG_I("receive len = %d\r\n", len);
 
-    if (len > 0) {
-        /* We allocate a pbuf chain of pbufs from the Lwip buffer pool */
-        p = pbuf_alloc(PBUF_LINK, len, PBUF_POOL);
-    } else {
-        LOG_I("error! cannot allocate pbuf\r\n");
-        return NULL;
-    }
-
-    if (p != NULL) {
-        offset = 4; /* Check spi_fifo read frame */
-        for (q = p; q != NULL; q = q->next) {
-            memcpy(q->payload, &p_rx[offset], q->len);
-            offset += q->len;
+        if (len > 0) {
+            /* We allocate a pbuf chain of pbufs from the Lwip buffer pool */
+            p = pbuf_alloc(PBUF_LINK, len, PBUF_POOL);
+        } else {
+            LOG_I("error! cannot allocate pbuf\r\n");
+            xSemaphoreGive(xLowLevelInputMutex);
+            return NULL;
         }
+
+        if (p != NULL) {
+            offset = 4; /* Check spi_fifo read frame */
+            for (q = p; q != NULL; q = q->next) {
+                memcpy(q->payload, &p_rx[offset], q->len);
+                offset += q->len;
+            }
+        }
+        xSemaphoreGive(xLowLevelInputMutex);
     }
 
     return p;
@@ -350,6 +296,12 @@ err_t ethernetif_init(struct netif *netif)
 #endif
 
     netif->linkoutput = low_level_output;
+
+    xLowLevelInputMutex = xSemaphoreCreateMutex();
+    if (xLowLevelInputMutex == NULL) {
+        LOG_E("xLowLevelInputMutex not created\r\n");
+        return -1;
+    }
 
     low_level_init(netif);
     return ERR_OK;
