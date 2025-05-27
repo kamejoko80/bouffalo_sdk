@@ -344,12 +344,15 @@ void spi_dma_transfer_read_setup(uint16_t len)
 
 void spi_dma_transfer_start(void)
 {
-    taskENTER_CRITICAL();
-    /* must get task handle before start spi dma */
-    xSpiDmaTransferTaskHandle = xTaskGetCurrentTaskHandle();
-    bflb_dma_channel_start(dma0_ch0);
-    bflb_dma_channel_start(dma0_ch1);
-    taskEXIT_CRITICAL();
+    //taskENTER_CRITICAL();
+    if (xSemaphoreTake(xSpiMutex, portMAX_DELAY) == pdTRUE) {
+        /* must get task handle before start spi dma */
+        xSpiDmaTransferTaskHandle = xTaskGetCurrentTaskHandle();
+        bflb_dma_channel_start(dma0_ch1);
+        bflb_dma_channel_start(dma0_ch0);        
+        xSemaphoreGive(xSpiMutex);
+    }
+    //taskEXIT_CRITICAL();
 }
 
 void spi_dma_transfer_wait_for_complete(void)
