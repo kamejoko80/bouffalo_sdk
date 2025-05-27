@@ -4,6 +4,11 @@ include(proj.conf)
 
 find_package(bouffalo_sdk REQUIRED HINTS $ENV{BL_SDK_BASE})
 
+sdk_add_compile_definitions(-DCONFIG_CLI_CMD_ENABLE)
+# sdk_add_compile_options(-DMQTT_USE_CUSTOM_SOCKET_HANDLE)
+# sdk_add_compile_definitions(-DMBEDTLS_PK_PARSE_C)
+# sdk_add_compile_definitions(-DBL616_DHCP_DEBUG)
+
 sdk_add_compile_definitions(-DMCU_MODULE_${MCU_MODULE})
 sdk_add_compile_definitions(-DFPGA_MODULE_${FPGA_MODULE})
 
@@ -15,6 +20,7 @@ target_sources(app PRIVATE
                ethernetif.c
                ping.c
                tcp_socket.c
+               mqtt_pub.c
                )
 
 sdk_set_main_file(main.c)

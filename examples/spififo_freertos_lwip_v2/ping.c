@@ -117,7 +117,10 @@ void ping_init(void) {
     raw_bind(ping_pcb, IP_ADDR_ANY);
 }
 
-void ping_task(void *arg) {
+#ifdef CONFIG_SHELL
+#include <shell.h>
+
+void ping_module_a_task(void *arg) {
   ip_addr_t tgt;
   IP4_ADDR(&tgt, 192, 168 , 1 ,2);
 
@@ -130,8 +133,45 @@ void ping_task(void *arg) {
   vTaskDelete(NULL);
 }
 
-void ping_task_init(void)
+void ping_module_b_task(void *arg) {
+  ip_addr_t tgt;
+  IP4_ADDR(&tgt, 192, 168 , 1 ,3);
+
+  for (int i=0; i<10 ; i++) {
+    LOG_I("Send ping...\r\n");
+    send_ping(&tgt);
+    vTaskDelay(pdMS_TO_TICKS(500));
+  }
+
+  vTaskDelete(NULL);
+}
+
+void ping_module_a_task_init(void)
 {
     LOG_I("[OS] Starting ping_task...\r\n");
-    xTaskCreate(ping_task, "ping_task", 4096, NULL, (DEFAULT_THREAD_PRIO - 4), NULL);
+    xTaskCreate(ping_module_a_task, "ping_module_a_task", 2048, NULL, (DEFAULT_THREAD_PRIO - 4), NULL);
 }
+
+void ping_module_b_task_init(void)
+{
+    LOG_I("[OS] Starting ping_task...\r\n");
+    xTaskCreate(ping_module_b_task, "ping_module_b_task", 2048, NULL, (DEFAULT_THREAD_PRIO - 4), NULL);
+}
+
+int cmd_ping_module_a(int argc, char **argv)
+{
+    printf("ping module a task init\r\n");
+    ping_module_a_task_init();
+    return 0;
+}
+SHELL_CMD_EXPORT_ALIAS(cmd_ping_module_a, ping_module_a, ping module A);
+
+int cmd_ping_module_b(int argc, char **argv)
+{
+    printf("ping module a task init\r\n");
+    ping_module_b_task_init();
+    return 0;
+}
+SHELL_CMD_EXPORT_ALIAS(cmd_ping_module_b, ping_module_b, ping module B);
+
+#endif /* CONFIG_SHELL */

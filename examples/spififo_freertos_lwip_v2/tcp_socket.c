@@ -13,8 +13,8 @@
 #define TEST_DURATION_MS     2000      /* run each test for 2 seconds */
 #define SEND_BUFFER_SIZE     4096      /* bytes per send() */
 
-#define TCP_CLIENT_PRIO      (DEFAULT_THREAD_PRIO-3)  // = 5
-#define TCP_SERVER_PRIO      (DEFAULT_THREAD_PRIO-3)  // = 5
+#define TCP_CLIENT_PRIO      (DEFAULT_THREAD_PRIO-3)
+#define TCP_SERVER_PRIO      (DEFAULT_THREAD_PRIO-3)
 
 static void tcp_server_task(void *arg) {
     int listen_sock, conn_sock;
@@ -160,3 +160,31 @@ void tcp_client_task_init(void)
     IP4_ADDR(&server_ip, 192,168,1,2);
     xTaskCreate(tcp_client_task, "tcp_cli", 4096, &server_ip, TCP_CLIENT_PRIO, NULL);
 }
+
+#ifdef CONFIG_SHELL
+#include <shell.h>
+
+extern void spi_ctrl_cmd_reset_fifo(void);
+int cmd_reset_spi_fifo(int argc, char **argv)
+{
+    printf("reset spi fifo...\r\n");
+    spi_ctrl_cmd_reset_fifo();
+    return 0;
+}
+SHELL_CMD_EXPORT_ALIAS(cmd_reset_spi_fifo, reset_spi_fifo, reset spi fifo);
+
+int cmd_tcp_client(int argc, char **argv)
+{
+    tcp_client_task_init();
+    return 0;
+}
+SHELL_CMD_EXPORT_ALIAS(cmd_tcp_client, tcp_client, start tcp client);
+
+int cmd_tcp_server(int argc, char **argv)
+{
+    tcp_server_task_init();
+    return 0;
+}
+SHELL_CMD_EXPORT_ALIAS(cmd_tcp_server, tcp_server, start tcp server);
+
+#endif /* CONFIG_SHELL */

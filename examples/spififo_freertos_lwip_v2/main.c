@@ -52,8 +52,6 @@ void netif_setup_cb(void *arg) {
     netif_set_up(netif);
 
 #if defined(MCU_MODULE_B)
-
-#if defined(PING_TEST)
     /* ---- insert static ARP entry here ---- */
     ip_addr_t target_ip;
     struct eth_addr eth;
@@ -65,11 +63,6 @@ void netif_setup_cb(void *arg) {
     eth.addr[4] = 0xA7;
     eth.addr[5] = 0x85;
     etharp_add_static_entry(&target_ip, &eth);
-
-    /* init icmp */
-    ping_init();
-#endif /* PING_TEST */
-
 #else  /* MCU_MODULE_A */
     /* ---- insert static ARP entry here ---- */
     ip_addr_t target_ip;
@@ -82,13 +75,10 @@ void netif_setup_cb(void *arg) {
     eth.addr[4] = 0xA7;
     eth.addr[5] = 0x86;
     etharp_add_static_entry(&target_ip, &eth);
-
-#if defined(TCP_SERVER_CLIENT_TEST)
-    tcp_server_task_init();
-#endif
-
 #endif /* MCU_MODULE_B */
 
+    /* init icmp */
+    ping_init();
 }
 
 void network_init(void)
@@ -140,46 +130,16 @@ int main(void)
     while(!bflb_gpio_read(gpio, BOOT_PIN));
     while(bflb_gpio_read(gpio, BOOT_PIN));
 
-    /* init uart shell */
-    uart0 = bflb_device_get_by_name("uart0");
-    shell_init_with_task(uart0);
-
     LOG_I("network init...\r\n");
     network_init();
+
+    /* init uart shell */
+    LOG_I("init uart0 shell...\r\n");
+    uart0 = bflb_device_get_by_name("uart0");
+    shell_init_with_task(uart0);
 
     vTaskStartScheduler();
 
     while (1) {
     }
 }
-
-#if defined(MCU_MODULE_B)
-extern void spi_ctrl_cmd_reset_fifo(void);
-int cmd_reset_spi_fifo(int argc, char **argv)
-{
-    printf("reset spi fifo...\r\n");
-    spi_ctrl_cmd_reset_fifo();
-    return 0;
-}
-SHELL_CMD_EXPORT_ALIAS(cmd_reset_spi_fifo, reset_spi_fifo, reset spi fifo);
-
-#if defined(PING_TEST)
-int cmd_ping_test(int argc, char **argv)
-{
-    printf("ping test task init\r\n");
-    ping_task_init();
-    return 0;
-}
-SHELL_CMD_EXPORT_ALIAS(cmd_ping_test, ping_test, ping test);
-#endif
-
-#if defined(TCP_SERVER_CLIENT_TEST)
-int cmd_tcp_client_test(int argc, char **argv)
-{
-    tcp_client_task_init();
-    return 0;
-}
-SHELL_CMD_EXPORT_ALIAS(cmd_tcp_client_test, tcp_client_test, tcp client test);
-#endif
-
-#endif
