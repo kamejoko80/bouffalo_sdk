@@ -228,8 +228,8 @@ int cmd_mqtt_subscribe(int argc, const char **argv)
 
 /*
  * Example:
- * > mqtt_pub 192.168.1.2 1883 bl616
+ * > mqtt_sub 192.168.1.2 1883 bl616
  */
-SHELL_CMD_EXPORT_ALIAS(cmd_mqtt_subscribe, mqtt_sub, mqtt subscribe);
+SHELL_CMD_EXPORT_ALIAS(cmd_mqtt_subscribe, mqtt_sub, ex: mqtt_sub 192.168.1.2 1883 bl616);
 #endif
 #endif
