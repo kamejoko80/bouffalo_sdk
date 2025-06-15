@@ -21,6 +21,8 @@ target_sources(app PRIVATE
                ping.c
                tcp_socket.c
                mqtt_pub.c
+               mqtt_sub.c
+               mqtt_broker.c
                )
 
 sdk_set_main_file(main.c)

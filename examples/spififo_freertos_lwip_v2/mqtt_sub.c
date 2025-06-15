@@ -1,8 +1,12 @@
+
+/**
+ * @file
+ * A simple program that subscribes to a topic.
+ */
 #include "FreeRTOS_POSIX.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <lwip/errno.h>
@@ -13,9 +17,7 @@
 #include "mqtt.h"
 #include "shell.h"
 
-#include "bflb_rtc.h"
-
-#define TCP_MQTT_PUB_PRIO (DEFAULT_THREAD_PRIO-3)
+#define TCP_MQTT_SUB_PRIO (DEFAULT_THREAD_PRIO-3)
 
 static uint8_t sendbuf[2048]; /* sendbuf should be large enough to hold multiple whole mqtt messages */
 static uint8_t recvbuf[1024]; /* recvbuf should be large enough any whole mqtt message expected to be received */
@@ -97,7 +99,7 @@ static void test_close(int sig)
     {
         close(test_sockfd);
     }
-    printf("mqtt_pub stop publish to %s\r\n", addr);
+    printf("mqtt_sub disconnecting from %s\r\n", addr);
 
     abort_exec(sig);
 
@@ -114,13 +116,6 @@ static int example_mqtt(int argc, const char *argv[])
     // int argc = 0;
 
     abort_exec = shell_signal(1, test_close);
-
-    struct bflb_device_s *rtc;
-
-    rtc = bflb_device_get_by_name("rtc");
-    bflb_rtc_set_time(rtc, 0);
-    /* our build utc time 1686873600 2023-06-16 00:00:00 */
-    time_t time_stamp = 1686873600;
 
     /* get address (argv[1] if present) */
     if (argc > 1) {
@@ -173,36 +168,18 @@ static int example_mqtt(int argc, const char *argv[])
     }
 
     /* start a thread to refresh the client (handle egress and ingree client traffic) */
-    xTaskCreate(client_refresher, (char*)"client_ref", 1024,  &client, TCP_MQTT_PUB_PRIO, &client_daemon);
+    xTaskCreate(client_refresher, (char*)"client_ref", 1024,  &client, TCP_MQTT_SUB_PRIO, &client_daemon);
+
+    /* subscribe */
+    mqtt_subscribe(&client, topic, 0);
 
     /* start publishing the time */
-    printf("%s is ready to begin publishing the time.\r\n", argv[0]);
-    printf("Press ENTER to publish the current time.\r\n");
+    printf("%s listening for '%s' messages.\r\n", argv[0], topic);
     printf("Press CTRL-C to exit.\r\n");
 
     /* block wait CTRL-C exit */
     while(1) {
-        /* get the current time */
-        time_t time = (BFLB_RTC_TIME2SEC(bflb_rtc_get_time(rtc)) + time_stamp);
-        struct tm *gmt = gmtime(&time);
-        char time_buf[26];
-        strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", gmt);
-        // printf("%s\r\n", time_buf);
-
-        /* print a message */
-        char application_message[256] = {"{\"hello mqtt by bl616/8 !\"}\r\n"};
-        sprintf(&application_message[strlen(application_message)], "Now time is %s", time_buf);
-        printf("%s published : \"%s\"\r\n", argv[0], application_message);
-
-        /* publish the time */
-        mqtt_publish(&client, topic, application_message, strlen(application_message) + 1, MQTT_PUBLISH_QOS_0);
-
-        /* check for errors */
-        if (client.error != MQTT_OK) {
-            printf("error: %s\r\n", mqtt_error_str(client.error));
-            test_close(SHELL_SIGINT);
-        }
-        vTaskDelay(3000);
+        vTaskDelay(100);
     }
 
     /* disconnect */
@@ -214,7 +191,19 @@ static int example_mqtt(int argc, const char *argv[])
 
 static void publish_callback_1(void** unused, struct mqtt_response_publish *published)
 {
-    /* not used in this example */
+    /* note that published->topic_name is NOT null-terminated (here we'll change it to a c-string) */
+    char* topic_name = (char*) malloc(published->topic_name_size + 1);
+    memcpy(topic_name, published->topic_name, published->topic_name_size);
+    topic_name[published->topic_name_size] = '\0';
+
+    char* topic_msg = (char*) malloc(published->application_message_size + 1);
+    memcpy(topic_msg, published->application_message, published->application_message_size);
+    topic_msg[published->application_message_size] = '\0';
+
+    printf("Received publish('%s'): %s\r\n", topic_name, topic_msg);
+
+    free(topic_name);
+    free(topic_msg);
 }
 
 static void client_refresher(void* client)
@@ -227,11 +216,11 @@ static void client_refresher(void* client)
 
 }
 
-#if defined(MCU_MODULE_B)
+#if defined(MCU_MODULE_A)
 #ifdef CONFIG_SHELL
 #include <shell.h>
 
-int cmd_mqtt_publisher(int argc, const char **argv)
+int cmd_mqtt_subscribe(int argc, const char **argv)
 {
     example_mqtt(argc, argv);
     return 0;
@@ -241,6 +230,6 @@ int cmd_mqtt_publisher(int argc, const char **argv)
  * Example:
  * > mqtt_pub 192.168.1.2 1883 bl616
  */
-SHELL_CMD_EXPORT_ALIAS(cmd_mqtt_publisher, mqtt_pub, mqtt publisher);
+SHELL_CMD_EXPORT_ALIAS(cmd_mqtt_subscribe, mqtt_sub, mqtt subscribe);
 #endif
 #endif
